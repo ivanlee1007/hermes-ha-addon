@@ -14,32 +14,27 @@ fi
 opt() { jq -r ".${1} // empty" "$OPTIONS_FILE"; }
 opt_bool() { jq -r ".${1} // false" "$OPTIONS_FILE"; }
 
-INSTALL_SOURCE=$(opt install_source)
 GIT_URL=$(opt git_url)
 GIT_REF=$(opt git_ref)
 GIT_TOKEN=$(opt git_token)
-PYPI_VERSION=$(opt pypi_version)
 AUTO_UPDATE=$(opt_bool auto_update)
 TIMEZONE=$(opt timezone)
 FORCE_IPV4=$(opt_bool force_ipv4_dns)
-ENABLE_TERMINAL=$(opt_bool enable_terminal)
 TERMINAL_PORT=$(opt terminal_port)
 HASS_TOKEN=$(opt homeassistant_token)
 HASS_URL=$(opt hass_url)
-AUTO_CONFIGURE_HASS=$(opt_bool auto_configure_hass)
 NGINX_LOG_LEVEL=$(opt nginx_log_level)
 
-echo "[run] Install source: $INSTALL_SOURCE"
-
-# ── Section 2: Validate inputs ──────────────────────────────────────
-if [ "$INSTALL_SOURCE" != "git" ] && [ "$INSTALL_SOURCE" != "pypi" ]; then
-    echo "[run] FATAL: install_source must be 'git' or 'pypi', got '$INSTALL_SOURCE'"
-    exit 1
+# Derive terminal enable from port (0 or empty = disabled)
+ENABLE_TERMINAL="false"
+if [ -n "$TERMINAL_PORT" ] && [ "$TERMINAL_PORT" -gt 0 ] 2>/dev/null; then
+    ENABLE_TERMINAL="true"
 fi
 
-if [ -n "$TERMINAL_PORT" ]; then
+# ── Section 2: Validate inputs ──────────────────────────────────────
+if [ "$ENABLE_TERMINAL" = "true" ]; then
     if [ "$TERMINAL_PORT" -lt 1024 ] || [ "$TERMINAL_PORT" -gt 65535 ]; then
-        echo "[run] FATAL: terminal_port must be 1024-65535, got '$TERMINAL_PORT'"
+        echo "[run] FATAL: terminal_port must be 1024-65535 (or 0 to disable), got '$TERMINAL_PORT'"
         exit 1
     fi
 fi
@@ -110,11 +105,7 @@ fi
 MARKER_FILE="$HERMES_HOME/.install_marker"
 
 compute_marker() {
-    if [ "$INSTALL_SOURCE" = "git" ]; then
-        echo "git|${GIT_URL}|${GIT_REF}|$(cd "$SRC_DIR" 2>/dev/null && git rev-parse HEAD 2>/dev/null || echo none)"
-    else
-        echo "pypi|${PYPI_VERSION:-latest}"
-    fi
+    echo "git|${GIT_URL}|${GIT_REF}|$(cd "$SRC_DIR" 2>/dev/null && git rev-parse HEAD 2>/dev/null || echo none)"
 }
 
 install_needed() {
@@ -122,7 +113,6 @@ install_needed() {
     current=$(compute_marker)
     if [ ! -f "$MARKER_FILE" ]; then return 0; fi
     if [ "$(cat "$MARKER_FILE")" != "$current" ]; then return 0; fi
-    # Also check the venv + hermes binary exist
     if [ ! -f "$VENV_DIR/bin/activate" ]; then return 0; fi
     if [ ! -f "$VENV_DIR/bin/hermes" ]; then return 0; fi
     return 1
@@ -137,63 +127,45 @@ activate_venv() {
     source "$VENV_DIR/bin/activate"
 }
 
-if [ "$INSTALL_SOURCE" = "git" ]; then
-    # Clone if missing
-    if [ ! -d "$SRC_DIR/.git" ]; then
-        echo "[run] Cloning Hermes Agent..."
-        CLONE_URL="$GIT_URL"
-        if [ -n "$GIT_TOKEN" ]; then
-            # Inject token transiently for clone only
-            CLONE_URL=$(echo "$GIT_URL" | sed "s|https://|https://${GIT_TOKEN}@|")
-        fi
-        CLONE_ARGS=()
-        if [ -n "$GIT_REF" ]; then
-            CLONE_ARGS+=(--branch "$GIT_REF")
-        fi
-        git clone "${CLONE_ARGS[@]}" "$CLONE_URL" "$SRC_DIR"
-        cd "$SRC_DIR"
-        git submodule update --init --recursive 2>/dev/null || true
-        echo "[run] Clone complete: $(git log --oneline -1)"
+# Clone if missing
+if [ ! -d "$SRC_DIR/.git" ]; then
+    echo "[run] Cloning Hermes Agent..."
+    CLONE_URL="$GIT_URL"
+    if [ -n "$GIT_TOKEN" ]; then
+        CLONE_URL=$(echo "$GIT_URL" | sed "s|https://|https://${GIT_TOKEN}@|")
     fi
+    CLONE_ARGS=()
+    if [ -n "$GIT_REF" ]; then
+        CLONE_ARGS+=(--branch "$GIT_REF")
+    fi
+    git clone "${CLONE_ARGS[@]}" "$CLONE_URL" "$SRC_DIR"
+    cd "$SRC_DIR"
+    git submodule update --init --recursive 2>/dev/null || true
+    echo "[run] Clone complete: $(git log --oneline -1)"
+fi
 
-    # Auto-update
-    if [ "$AUTO_UPDATE" = "true" ] && [ -d "$SRC_DIR/.git" ]; then
-        echo "[run] Pulling latest changes..."
-        cd "$SRC_DIR"
-        git pull --ff-only 2>/dev/null || echo "[run] Warning: git pull failed (may have local changes)"
-        git submodule update --init --recursive 2>/dev/null || true
-    fi
+# Auto-update
+if [ "$AUTO_UPDATE" = "true" ] && [ -d "$SRC_DIR/.git" ]; then
+    echo "[run] Pulling latest changes..."
+    cd "$SRC_DIR"
+    git pull --ff-only 2>/dev/null || echo "[run] Warning: git pull failed (may have local changes)"
+    git submodule update --init --recursive 2>/dev/null || true
+fi
 
-    # Install (editable)
-    activate_venv
-    if install_needed; then
-        echo "[run] Installing Hermes (editable)..."
-        cd "$SRC_DIR"
-        uv pip install -e ".[all,dev]" 2>&1 | tail -5
-        # mini-swe-agent submodule
-        if [ -f "$SRC_DIR/mini-swe-agent/pyproject.toml" ]; then
-            uv pip install -e "$SRC_DIR/mini-swe-agent" 2>&1 | tail -3
-        fi
-        compute_marker > "$MARKER_FILE"
-        echo "[run] Install complete"
-    else
-        echo "[run] Install up to date (marker match)"
+# Editable install
+activate_venv
+if install_needed; then
+    echo "[run] Installing Hermes (editable)..."
+    cd "$SRC_DIR"
+    uv pip install -e ".[all,dev]" 2>&1 | tail -5
+    # mini-swe-agent submodule
+    if [ -f "$SRC_DIR/mini-swe-agent/pyproject.toml" ]; then
+        uv pip install -e "$SRC_DIR/mini-swe-agent" 2>&1 | tail -3
     fi
+    compute_marker > "$MARKER_FILE"
+    echo "[run] Install complete"
 else
-    # PyPI install
-    activate_venv
-    if install_needed; then
-        echo "[run] Installing Hermes from PyPI..."
-        if [ -n "$PYPI_VERSION" ]; then
-            uv pip install "hermes-agent[all]==$PYPI_VERSION" 2>&1 | tail -5
-        else
-            uv pip install "hermes-agent[all]" 2>&1 | tail -5
-        fi
-        compute_marker > "$MARKER_FILE"
-        echo "[run] Install complete"
-    else
-        echo "[run] Install up to date (marker match)"
-    fi
+    echo "[run] Install up to date (marker match)"
 fi
 
 # Verify
@@ -277,16 +249,14 @@ if [ "$ENV_COUNT" -gt 0 ]; then
     echo "[run] Exported $ENV_COUNT env var(s)"
 fi
 
-# HA integration tokens
-if [ "$AUTO_CONFIGURE_HASS" = "true" ]; then
-    if [ -n "$HASS_TOKEN" ]; then
-        export HASS_TOKEN
-        echo "[run] HASS_TOKEN injected"
-    fi
-    if [ -n "$HASS_URL" ]; then
-        export HASS_URL
-        echo "[run] HASS_URL injected: $HASS_URL"
-    fi
+# HA integration: pass through if set
+if [ -n "$HASS_TOKEN" ]; then
+    export HASS_TOKEN
+    echo "[run] HASS_TOKEN injected"
+fi
+if [ -n "$HASS_URL" ]; then
+    export HASS_URL
+    echo "[run] HASS_URL: $HASS_URL"
 fi
 
 # Source .env for the agent
@@ -325,7 +295,7 @@ sed -i \
     -e "s|%%TERMINAL_STATUS_CLASS%%|${TERMINAL_STATUS_CLASS}|g" \
     -e "s|%%TERMINAL_BTN_CLASS%%|${TERMINAL_BTN_CLASS}|g" \
     -e "s|%%INGRESS_ENTRY%%|${INGRESS_ENTRY}|g" \
-    -e "s|%%INSTALL_SOURCE%%|${INSTALL_SOURCE}|g" \
+    -e "s|%%INSTALL_SOURCE%%|git|g" \
     /var/www/landing.html
 
 # Render nginx config
@@ -355,9 +325,9 @@ start_gateway() {
 
 start_ttyd() {
     if [ "$ENABLE_TERMINAL" = "true" ]; then
-        echo "[run] Starting ttyd on port ${TERMINAL_PORT:-7681}..."
+        echo "[run] Starting ttyd on port ${TERMINAL_PORT}..."
         ttyd \
-            --port "${TERMINAL_PORT:-7681}" \
+            --port "${TERMINAL_PORT}" \
             --interface 127.0.0.1 \
             --writable \
             --title "Hermes Agent" \
@@ -366,7 +336,7 @@ start_ttyd() {
         TTYD_PID=$!
         echo "[run] ttyd started (PID: $TTYD_PID)"
     else
-        echo "[run] Terminal disabled"
+        echo "[run] Terminal disabled (port 0)"
     fi
 }
 
@@ -388,7 +358,11 @@ echo "[run] All services started"
 echo "─────────────────────────────────────────────"
 echo " Hermes Agent v${HERMES_VERSION}"
 echo " Gateway PID: ${GATEWAY_PID}"
-echo " Terminal:    ${ENABLE_TERMINAL} (port ${TERMINAL_PORT:-7681})"
+if [ "$ENABLE_TERMINAL" = "true" ]; then
+    echo " Terminal:    port ${TERMINAL_PORT}"
+else
+    echo " Terminal:    disabled"
+fi
 echo " Ingress:     http://localhost:${INGRESS_PORT}${INGRESS_ENTRY}"
 echo "─────────────────────────────────────────────"
 
@@ -398,7 +372,7 @@ shutdown() {
     echo "[run] Shutting down..."
     # Reverse order: nginx -> ttyd -> gateway
     if [ -n "$NGINX_PID" ] && kill -0 "$NGINX_PID" 2>/dev/null; then
-        nginx -s quit 2>/dev/null || kill "$NGINX_PID" 2>/dev/null
+        kill "$NGINX_PID" 2>/dev/null
         echo "[run] nginx stopped"
     fi
     if [ -n "$TTYD_PID" ] && kill -0 "$TTYD_PID" 2>/dev/null; then
