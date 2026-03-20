@@ -169,7 +169,7 @@ else
 fi
 
 # Verify
-HERMES_VERSION=$(hermes --version 2>/dev/null || echo "unknown")
+HERMES_VERSION=$(hermes --version 2>/dev/null | head -1 || echo "unknown")
 export HERMES_VERSION
 echo "[run] Hermes version: $HERMES_VERSION"
 
