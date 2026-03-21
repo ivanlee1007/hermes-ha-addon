@@ -1,5 +1,5 @@
 name: Hermes Agent
-version: "0.2.2"
+version: "0.2.3"
 slug: hermes_agent
 description: "NousResearch Hermes Agent - persistent AI agent with memory, skills, and multi-platform messaging"
 url: "https://github.com/NousResearch/hermes-agent"
@@ -10,7 +10,8 @@ init: false
 startup: application
 boot: auto
 ingress: true
-ingress_port: 48099
+ingress_port: 0
+ingress_stream: true
 panel_icon: mdi:robot-outline
 panel_title: Hermes Agent
 map:
@@ -24,7 +25,6 @@ options:
   timezone: "Europe/Berlin"
   force_ipv4_dns: true
   auto_setup: true
-  terminal_port: 7681
   homeassistant_token: ""
   hass_url: "http://homeassistant.local:8123"
   nginx_log_level: "minimal"
@@ -37,7 +37,6 @@ schema:
   timezone: "str"
   force_ipv4_dns: "bool"
   auto_setup: "bool"
-  terminal_port: "int(0,65535)?"
   homeassistant_token: "password?"
   hass_url: "url?"
   nginx_log_level: "list(off|minimal|full)"

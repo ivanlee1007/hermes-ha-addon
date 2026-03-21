@@ -23,10 +23,6 @@ configuration:
     description: >-
       Launch the interactive setup wizard on first terminal login
       if Hermes Agent has not been configured yet.
-  terminal_port:
-    name: Terminal Port
-    description: >-
-      Port for the web terminal. Set to 0 to disable the terminal.
   homeassistant_token:
     name: Home Assistant Token
     description: Long-lived access token for HA API integration (optional).

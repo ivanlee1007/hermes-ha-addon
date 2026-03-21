@@ -21,24 +21,9 @@ AUTO_UPDATE=$(opt_bool auto_update)
 TIMEZONE=$(opt timezone)
 FORCE_IPV4=$(opt_bool force_ipv4_dns)
 AUTO_SETUP=$(opt_bool auto_setup)
-TERMINAL_PORT=$(opt terminal_port)
 HASS_TOKEN=$(opt homeassistant_token)
 HASS_URL=$(opt hass_url)
 NGINX_LOG_LEVEL=$(opt nginx_log_level)
-
-# Derive terminal enable from port (0 or empty = disabled)
-ENABLE_TERMINAL="false"
-if [ -n "$TERMINAL_PORT" ] && [ "$TERMINAL_PORT" -gt 0 ] 2>/dev/null; then
-    ENABLE_TERMINAL="true"
-fi
-
-# ── Section 2: Validate inputs ──────────────────────────────────────
-if [ "$ENABLE_TERMINAL" = "true" ]; then
-    if [ "$TERMINAL_PORT" -lt 1024 ] || [ "$TERMINAL_PORT" -gt 65535 ]; then
-        echo "[run] FATAL: terminal_port must be 1024-65535 (or 0 to disable), got '$TERMINAL_PORT'"
-        exit 1
-    fi
-fi
 
 # ── Section 3: System setup ─────────────────────────────────────────
 # Timezone (reject path traversal)
@@ -287,48 +272,27 @@ if [ -f "$HERMES_HOME/.env" ]; then
     set +a
 fi
 
-# ── Section 8: Render nginx config ──────────────────────────────────
-INGRESS_PORT="${INGRESS_PORT:-48099}"
-INGRESS_ENTRY="${INGRESS_ENTRY:-/}"
+# ── Section 8: Render nginx config (for future API proxy) ───────────
+NGINX_PORT=8099
 
 # Compute access log directive
 case "$NGINX_LOG_LEVEL" in
     off)  ACCESS_LOG_DIRECTIVE="access_log off;" ;;
     full) ACCESS_LOG_DIRECTIVE="access_log /dev/stdout;" ;;
-    *)    ACCESS_LOG_DIRECTIVE='access_log /dev/stdout minimal if=$loggable;' ;;
+    *)    ACCESS_LOG_DIRECTIVE='access_log /dev/stdout minimal;' ;;
 esac
 
-# Render landing page
-TERMINAL_STATUS="Enabled"
-TERMINAL_STATUS_CLASS="status-ok"
-TERMINAL_BTN_CLASS=""
-if [ "$ENABLE_TERMINAL" != "true" ]; then
-    TERMINAL_STATUS="Disabled"
-    TERMINAL_STATUS_CLASS="status-off"
-    TERMINAL_BTN_CLASS="disabled"
-fi
-
-cp /var/www/landing.html.tpl /var/www/landing.html
-sed -i \
-    -e "s|%%HERMES_VERSION%%|${HERMES_VERSION}|g" \
-    -e "s|%%TERMINAL_STATUS%%|${TERMINAL_STATUS}|g" \
-    -e "s|%%TERMINAL_STATUS_CLASS%%|${TERMINAL_STATUS_CLASS}|g" \
-    -e "s|%%TERMINAL_BTN_CLASS%%|${TERMINAL_BTN_CLASS}|g" \
-    /var/www/landing.html
-
-# Render nginx config
 cp /etc/nginx/nginx.conf.tpl /etc/nginx/nginx.conf
 sed -i \
-    -e "s|%%INGRESS_PORT%%|${INGRESS_PORT}|g" \
-    -e "s|%%INGRESS_ENTRY%%|${INGRESS_ENTRY}|g" \
-    -e "s|%%TERMINAL_PORT%%|${TERMINAL_PORT:-7681}|g" \
+    -e "s|%%NGINX_PORT%%|${NGINX_PORT}|g" \
     -e "s|%%NGINX_LOG_LEVEL%%|${NGINX_LOG_LEVEL}|g" \
     -e "s|%%ACCESS_LOG_DIRECTIVE%%|${ACCESS_LOG_DIRECTIVE}|g" \
     /etc/nginx/nginx.conf
 
-echo "[run] Nginx configured (log level: $NGINX_LOG_LEVEL)"
+echo "[run] Nginx configured (port: $NGINX_PORT, log level: $NGINX_LOG_LEVEL)"
 
 # ── Section 9: Start services ───────────────────────────────────────
+INGRESS_PORT="${INGRESS_PORT:-48099}"
 GATEWAY_PID=""
 TTYD_PID=""
 NGINX_PID=""
@@ -342,23 +306,18 @@ start_gateway() {
 }
 
 start_ttyd() {
-    if [ "$ENABLE_TERMINAL" = "true" ]; then
-        echo "[run] Starting ttyd on port ${TERMINAL_PORT}..."
-        ttyd \
-            --port "${TERMINAL_PORT}" \
-            --interface 127.0.0.1 \
-            --base-path /terminal/ \
-            --writable \
-            /usr/bin/bash -l &
-        TTYD_PID=$!
-        echo "[run] ttyd started (PID: $TTYD_PID)"
-    else
-        echo "[run] Terminal disabled (port 0)"
-    fi
+    echo "[run] Starting ttyd on ingress port ${INGRESS_PORT}..."
+    cd /root
+    ttyd \
+        --port "${INGRESS_PORT}" \
+        --writable \
+        tmux -u new -A -s hermes /usr/bin/bash -l &
+    TTYD_PID=$!
+    echo "[run] ttyd started (PID: $TTYD_PID)"
 }
 
 start_nginx() {
-    echo "[run] Starting nginx..."
+    echo "[run] Starting nginx on port ${NGINX_PORT}..."
     nginx -g 'daemon off;' &
     NGINX_PID=$!
     echo "[run] nginx started (PID: $NGINX_PID)"
@@ -375,12 +334,8 @@ echo "[run] All services started"
 echo "─────────────────────────────────────────────"
 echo " Hermes Agent v${HERMES_VERSION}"
 echo " Gateway PID: ${GATEWAY_PID}"
-if [ "$ENABLE_TERMINAL" = "true" ]; then
-    echo " Terminal:    port ${TERMINAL_PORT}"
-else
-    echo " Terminal:    disabled"
-fi
-echo " Ingress:     http://localhost:${INGRESS_PORT}${INGRESS_ENTRY}"
+echo " Terminal:    ingress (tmux session 'hermes')"
+echo " Nginx:       port ${NGINX_PORT} (API proxy)"
 echo "─────────────────────────────────────────────"
 
 # ── Section 10: Signal handling ──────────────────────────────────────
