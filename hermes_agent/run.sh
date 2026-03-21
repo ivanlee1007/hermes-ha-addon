@@ -297,6 +297,11 @@ if [ -n "$HASS_URL" ]; then
     echo "[run] HASS_URL: $HASS_URL"
 fi
 
+# Enable OpenAI-compatible API server on the Gateway
+export API_SERVER_ENABLED=true
+export API_SERVER_PORT=8642
+export API_SERVER_HOST=127.0.0.1
+
 # Source .env for the agent
 if [ -f "$HERMES_HOME/.env" ]; then
     set -a
