@@ -292,12 +292,21 @@ sed -i \
 echo "[run] Nginx configured (port: $NGINX_PORT, log level: $NGINX_LOG_LEVEL)"
 
 # ── Section 9: Start services ───────────────────────────────────────
-# Get dynamically assigned ingress port from Supervisor API
-INGRESS_PORT=$(curl -s -H "Authorization: Bearer ${SUPERVISOR_TOKEN:-}" http://supervisor/addons/self/info 2>/dev/null | jq -r '.data.ingress_port' 2>/dev/null) || true
-if [ -z "$INGRESS_PORT" ] || [ "$INGRESS_PORT" = "null" ]; then
-    echo "[run] Warning: Could not get ingress port from Supervisor, falling back to 48099"
-    INGRESS_PORT=48099
+# Get dynamically assigned ingress port from Supervisor API (retry up to 30s)
+INGRESS_PORT=""
+for i in $(seq 1 30); do
+    INGRESS_PORT=$(curl -s -H "Authorization: Bearer ${SUPERVISOR_TOKEN:-}" http://supervisor/addons/self/info 2>/dev/null | jq -r '.data.ingress_port' 2>/dev/null) || true
+    if [ -n "$INGRESS_PORT" ] && [ "$INGRESS_PORT" != "null" ] && [ "$INGRESS_PORT" != "0" ]; then
+        break
+    fi
+    echo "[run] Waiting for Supervisor API... ($i/30)"
+    sleep 1
+done
+if [ -z "$INGRESS_PORT" ] || [ "$INGRESS_PORT" = "null" ] || [ "$INGRESS_PORT" = "0" ]; then
+    echo "[run] FATAL: Could not get ingress port from Supervisor after 30 attempts"
+    exit 1
 fi
+echo "[run] Ingress port: $INGRESS_PORT"
 GATEWAY_PID=""
 TTYD_PID=""
 NGINX_PID=""
