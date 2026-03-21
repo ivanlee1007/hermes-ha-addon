@@ -292,7 +292,12 @@ sed -i \
 echo "[run] Nginx configured (port: $NGINX_PORT, log level: $NGINX_LOG_LEVEL)"
 
 # ── Section 9: Start services ───────────────────────────────────────
-INGRESS_PORT="${INGRESS_PORT:-48099}"
+# Get dynamically assigned ingress port from Supervisor API
+INGRESS_PORT=$(curl -s -H "Authorization: Bearer ${SUPERVISOR_TOKEN}" http://supervisor/addons/self/info | jq -r '.data.ingress_port')
+if [ -z "$INGRESS_PORT" ] || [ "$INGRESS_PORT" = "null" ]; then
+    echo "[run] Warning: Could not get ingress port from Supervisor, falling back to 48099"
+    INGRESS_PORT=48099
+fi
 GATEWAY_PID=""
 TTYD_PID=""
 NGINX_PID=""
@@ -332,7 +337,7 @@ start_nginx
 
 echo "[run] All services started"
 echo "─────────────────────────────────────────────"
-echo " Hermes Agent v${HERMES_VERSION}"
+echo " ${HERMES_VERSION}"
 echo " Gateway PID: ${GATEWAY_PID}"
 echo " Terminal:    ingress (tmux session 'hermes')"
 echo " Nginx:       port ${NGINX_PORT} (API proxy)"
