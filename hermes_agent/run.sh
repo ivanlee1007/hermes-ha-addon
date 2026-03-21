@@ -293,7 +293,7 @@ echo "[run] Nginx configured (port: $NGINX_PORT, log level: $NGINX_LOG_LEVEL)"
 
 # ── Section 9: Start services ───────────────────────────────────────
 # Read Supervisor token (s6-overlay stores runtime env in files, not in process env)
-SUPERVISOR_TOKEN="${SUPERVISOR_TOKEN:-$(cat /var/run/s6/container_environment/SUPERVISOR_TOKEN 2>/dev/null || echo '')}"
+export SUPERVISOR_TOKEN="${SUPERVISOR_TOKEN:-$(cat /var/run/s6/container_environment/SUPERVISOR_TOKEN 2>/dev/null || echo '')}"
 
 # Get dynamically assigned ingress port from Supervisor API (retry up to 30s)
 INGRESS_PORT=""
