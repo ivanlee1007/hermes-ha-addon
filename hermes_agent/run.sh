@@ -173,6 +173,13 @@ else
     echo "[run] Install up to date (marker match)"
 fi
 
+# Link image-installed npm packages into project node_modules (where Hermes expects them)
+if [ ! -e "$SRC_DIR/node_modules/agent-browser" ]; then
+    mkdir -p "$SRC_DIR/node_modules"
+    ln -snf /usr/local/lib/node_modules/agent-browser "$SRC_DIR/node_modules/agent-browser"
+    echo "[run] Linked agent-browser into project"
+fi
+
 # Verify
 HERMES_VERSION=$(hermes --version 2>/dev/null | head -1 || echo "unknown")
 export HERMES_VERSION
