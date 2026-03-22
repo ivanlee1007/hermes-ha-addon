@@ -3,26 +3,25 @@ FROM ${BUILD_FROM}
 
 # ── System packages ──────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        # Python build deps
-        python3 python3-dev python3-pip python3-venv \
-        build-essential libffi-dev libssl-dev \
-        # SQLite with FTS5
-        sqlite3 libsqlite3-dev \
-        # Media
-        ffmpeg \
-        # Chromium + Playwright system deps
+        # Prerequisites
+        git nginx rsync tmux \
+        # System Packages
+        ffmpeg ripgrep \
+        # Dependencies
+        build-essential python3-dev libffi-dev \
+        # Chromium (deps auto-resolved by apt)
         chromium \
-        libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
-        libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 \
-        libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2 \
-        # Networking / dev tools
-        nginx git curl wget jq ripgrep fd-find rsync tmux \
-        openssh-client vim nano procps less unzip zip tree \
-        bat dnsutils netcat-openbsd bash-completion command-not-found \
+        # SQLite with FTS5
+        #sqlite3 libsqlite3-dev \
         # Homebrew deps
         file \
-    && rm -rf /var/lib/apt/lists/* \
-    && ln -s /usr/bin/batcat /usr/local/bin/bat
+        # Python build deps
+        #python3 python3-pip python3-venv libssl-dev \
+        # Networking / dev tools
+        #bash-completion bat command-not-found dnsutils fd-find less nano \
+        #netcat-openbsd openssh-client procps tree unzip vim wget zip \
+    && rm -rf /var/lib/apt/lists/* #\
+    #&& ln -s /usr/bin/batcat /usr/local/bin/bat
 
 ENV LANG=C.UTF-8 \
     PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium
