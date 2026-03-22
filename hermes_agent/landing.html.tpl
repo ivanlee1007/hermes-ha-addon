@@ -30,6 +30,7 @@
     <button class="btn active" id="btnHermes" onclick="setMode('hermes')">Hermes</button>
     <button class="btn secondary" id="btnTerminal" onclick="setMode('terminal')">Terminal</button>
     <a class="btn green" href="./cert/ca.crt" download="hermes-agent-ca.crt">CA Cert</a>
+    <a class="btn small secondary" id="btnAppInfo" href="/config/app/%%ADDON_SLUG%%/info" target="_top" style="display:none">App Info</a>
   </div>
   <div class="status">
     <span id="statusGateway">&#x23F3; Gateway</span>
@@ -58,6 +59,12 @@
     btnHermes.className = mode === 'hermes' ? 'btn active' : 'btn secondary';
     btnTerminal.className = mode === 'terminal' ? 'btn active' : 'btn secondary';
   };
+
+  // Show App Info button only when inside HA ingress iframe
+  try { var inIframe = window !== window.top; } catch(e) { var inIframe = true; }
+  if (inIframe) {
+    document.getElementById('btnAppInfo').style.display = '';
+  }
 
   var s = document.getElementById('statusSecure');
   s.textContent = window.isSecureContext ? '\u2705 Secure' : '\u26A0\uFE0F Not secure';

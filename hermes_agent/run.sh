@@ -19,17 +19,16 @@ GIT_URL=$(opt git_url)
 GIT_REF=$(opt git_ref)
 GIT_TOKEN=$(opt git_token)
 AUTO_UPDATE=$(opt_bool auto_update)
-TIMEZONE=$(opt timezone)
 FORCE_IPV4=$(opt_bool force_ipv4_dns)
 HASS_TOKEN=$(opt homeassistant_token)
 HASS_URL=$(opt hass_url)
 
 # ── Section 2: System setup ─────────────────────────────────────────
-# Timezone (reject path traversal)
-if [ -n "$TIMEZONE" ] && [[ "$TIMEZONE" != *..* ]] && [ -f "/usr/share/zoneinfo/$TIMEZONE" ]; then
-    ln -snf "/usr/share/zoneinfo/$TIMEZONE" /etc/localtime
-    echo "$TIMEZONE" > /etc/timezone
-    echo "[run] Timezone: $TIMEZONE"
+# Timezone: sync /etc/localtime + /etc/timezone from HA's TZ env var
+if [ -n "$TZ" ] && [[ "$TZ" != *..* ]] && [ -f "/usr/share/zoneinfo/$TZ" ]; then
+    ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime
+    echo "$TZ" > /etc/timezone
+    echo "[run] Timezone: $TZ"
 fi
 
 # IPv4 DNS priority
@@ -271,7 +270,7 @@ ln -snf "$HERMES_HOME/.tmux.conf" /root/.tmux.conf
 
 # ── Section 7: Environment variable passthrough ──────────────────────
 # Only reserve vars controlled by dedicated config options (avoid conflicts)
-RESERVED_VARS="HERMES_HOME|HASS_TOKEN|HASS_URL|TZ"
+RESERVED_VARS="HERMES_HOME|HASS_TOKEN|HASS_URL|GITHUB_TOKEN"
 
 ENV_COUNT=$(jq '.env_vars | length' "$OPTIONS_FILE" 2>/dev/null || echo 0)
 if [ "$ENV_COUNT" -gt 0 ]; then
@@ -291,6 +290,11 @@ fi
 if [ -n "$HASS_TOKEN" ]; then
     export HASS_TOKEN
     echo "[run] HASS_TOKEN injected"
+fi
+# Git token also serves as GITHUB_TOKEN (for gh CLI + Hermes skills)
+if [ -n "$GIT_TOKEN" ]; then
+    export GITHUB_TOKEN="$GIT_TOKEN"
+    echo "[run] GITHUB_TOKEN injected"
 fi
 if [ -n "$HASS_URL" ]; then
     export HASS_URL
@@ -348,9 +352,11 @@ sed -i \
     /etc/nginx/nginx.conf
 
 # Render landing page
+ADDON_SLUG=$(hostname | tr '-' '_')
 cp /var/www/landing.html.tpl /var/www/landing.html
 sed -i \
     -e "s|%%HERMES_VERSION%%|${HERMES_VERSION}|g" \
+    -e "s|%%ADDON_SLUG%%|${ADDON_SLUG}|g" \
     /var/www/landing.html
 
 echo "[run] Nginx configured (ingress: $INGRESS_PORT, HTTP: $HTTP_PORT, HTTPS: $HTTPS_PORT)"

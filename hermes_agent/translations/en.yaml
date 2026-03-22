@@ -8,8 +8,10 @@ configuration:
       Branch, tag, or commit hash to check out.
       Leave empty for the repository's default branch.
   git_token:
-    name: Git Token
-    description: Personal access token for private repositories (optional).
+    name: Git / GitHub Token
+    description: >-
+      Personal access token for private repositories (optional).
+      Also exported as GITHUB_TOKEN for gh CLI and Hermes skills.
   auto_update:
     name: Auto Update
     description: >-
@@ -28,11 +30,6 @@ configuration:
   force_ipv4_dns:
     name: Force IPv4 DNS
     description: Prefer IPv4 for DNS resolution (fixes issues on some networks).
-  timezone:
-    name: Timezone
-    description: >-
-      Override container timezone (e.g. "Europe/Berlin", "America/New_York").
-      Leave empty to use Home Assistant's timezone.
   env_vars:
     name: Environment Variables
     description: >-
