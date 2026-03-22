@@ -21,11 +21,10 @@ configuration:
     name: Home Assistant Token
     description: Long-lived access token for HA API integration (optional).
   hermes_home:
-    name: Agent Profile Directory
+    name: Hermes Home Directory
     description: >-
-      Directory name for agent data (relative to /config).
-      Each profile has its own personality, memories, config, and skills.
-      Change to switch profiles (e.g. "amy"). Old data is kept.
+      Directory name for Hermes Agent data (relative to /config).
+      Default ".hermes". Change to e.g. "amy" for /config/amy/.
   force_ipv4_dns:
     name: Force IPv4 DNS
     description: Prefer IPv4 for DNS resolution (fixes issues on some networks).
