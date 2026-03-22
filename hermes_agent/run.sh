@@ -368,6 +368,7 @@ NGINX_PID=""
 
 start_gateway() {
     echo "[run] Starting Hermes gateway..."
+    mkdir -p "$HERMES_HOME/logs"
     cd "$HERMES_HOME"
     hermes gateway run >> "$HERMES_HOME/logs/gateway.log" 2>&1 &
     GATEWAY_PID=$!
