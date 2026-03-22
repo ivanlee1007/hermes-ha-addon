@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         # Networking / dev tools
         nginx git curl wget jq ripgrep fd-find rsync tmux \
         openssh-client vim nano procps less unzip zip tree \
-        bat dnsutils netcat-openbsd \
+        bat dnsutils netcat-openbsd bash-completion command-not-found \
         # Homebrew deps
         file \
     && rm -rf /var/lib/apt/lists/* \

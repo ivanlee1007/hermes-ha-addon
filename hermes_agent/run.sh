@@ -111,12 +111,57 @@ if [ ! -f /config/.bashrc ]; then
 [ -f ~/.hermes_profile ] && . ~/.hermes_profile
 # Source Hermes API keys
 [ -f "${HERMES_HOME:=$HOME/.hermes}/.env" ] && set -a && . "$HERMES_HOME/.env" && set +a
-# Prompt
-PS1='\[\033[01;34m\]\w\[\033[00m\]\$ '
+
+# If not running interactively, stop here
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
 # Working directory
 cd ~
-# User customizations
+
+# History
+HISTCONTROL=ignoreboth
+shopt -s histappend
+HISTSIZE=1000000
+HISTFILESIZE=1000000
+
+# Shell options
+shopt -s checkwinsize
+shopt -s globstar
+
+# lesspipe
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
+# Prompt
+PS1='\[\033[01;34m\]\w\[\033[00m\]\$ '
+
+# Colors
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# Aliases
+alias ll='ls -l'
+alias la='ls -A'
+alias l='ls -CF'
+
+# Alias definitions
 [ -f ~/.bash_aliases ] && . ~/.bash_aliases
+
+# Bash completion
+if ! shopt -oq posix; then
+    if [ -f /usr/share/bash-completion/bash_completion ]; then
+        . /usr/share/bash-completion/bash_completion
+    elif [ -f /etc/bash_completion ]; then
+        . /etc/bash_completion
+    fi
+fi
 BASHRC
     echo "[run] Created default .bashrc"
 fi
