@@ -421,16 +421,8 @@ start_gateway() {
 }
 
 start_ttyd() {
-    echo "[run] Starting ttyd (terminal: ${TTYD_TERMINAL_PORT}, hermes: ${TTYD_HERMES_PORT})..."
-    # Terminal: non-login shell (shell pur)
-    ttyd \
-        --port "${TTYD_TERMINAL_PORT}" \
-        --interface 127.0.0.1 \
-        --base-path /terminal/ \
-        --writable \
-        tmux -u new -A -s terminal /usr/bin/bash &
-    TTYD_TERMINAL_PID=$!
-    # Hermes: login shell (exec hermes via profile.d)
+    echo "[run] Starting ttyd (hermes: ${TTYD_HERMES_PORT}, terminal: ${TTYD_TERMINAL_PORT})..."
+    # Hermes: login shell (starts hermes via .profile)
     ttyd \
         --port "${TTYD_HERMES_PORT}" \
         --interface 127.0.0.1 \
@@ -438,7 +430,15 @@ start_ttyd() {
         --writable \
         tmux -u new -A -s hermes /usr/bin/bash -l &
     TTYD_HERMES_PID=$!
-    echo "[run] ttyd started (terminal PID: $TTYD_TERMINAL_PID, hermes PID: $TTYD_HERMES_PID)"
+    # Terminal: non-login shell (plain shell)
+    ttyd \
+        --port "${TTYD_TERMINAL_PORT}" \
+        --interface 127.0.0.1 \
+        --base-path /terminal/ \
+        --writable \
+        tmux -u new -A -s terminal /usr/bin/bash &
+    TTYD_TERMINAL_PID=$!
+    echo "[run] ttyd started (hermes PID: $TTYD_HERMES_PID, terminal PID: $TTYD_TERMINAL_PID)"
 }
 
 start_nginx() {
