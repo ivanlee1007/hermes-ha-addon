@@ -47,7 +47,6 @@ echo "[run] HERMES_HOME: $HERMES_HOME"
 # ── Section 3: Persistent storage setup ──────────────────────────────
 SRC_DIR="$HOME/hermes-agent"
 VENV_DIR="$HOME/.venv"
-WORKSPACE_DIR="$HERMES_HOME/workspace"
 BREW_DIR="$HOME/.linuxbrew"
 NODE_DIR="$HOME/.npm-global"
 GO_DIR="$HOME/.go"
@@ -58,15 +57,8 @@ TTYD_TERMINAL_PORT=49369
 HTTP_PORT=8080
 HTTPS_PORT=8443
 
-# Create persistent directories
+# Create persistent directories (only system infra — Hermes creates its own)
 for d in "$HERMES_HOME" \
-         "$HERMES_HOME/cron" \
-         "$HERMES_HOME/logs" \
-         "$HERMES_HOME/memories" \
-         "$HERMES_HOME/plugins" \
-         "$HERMES_HOME/sessions" \
-         "$HERMES_HOME/skills" \
-         "$WORKSPACE_DIR" \
          "$NODE_DIR/lib" \
          "$GO_DIR/bin" \
          "$CERTS_DIR"; do
@@ -122,7 +114,7 @@ if [ ! -f /config/.bashrc ]; then
 # Prompt
 PS1='\[\033[01;34m\]\w\[\033[00m\]\$ '
 # Working directory
-cd "${HERMES_HOME:-$HOME}" 2>/dev/null || cd ~
+cd ~
 # User customizations
 [ -f ~/.bash_aliases ] && . ~/.bash_aliases
 BASHRC
@@ -151,7 +143,9 @@ fi
 MARKER_FILE="$HOME/.hermes_install"
 
 compute_marker() {
-    echo "git|${GIT_URL}|${GIT_REF}|$(cd "$SRC_DIR" 2>/dev/null && git rev-parse HEAD 2>/dev/null || echo none)"
+    local ref="${GIT_REF:-$(cd "$SRC_DIR" 2>/dev/null && git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)}"
+    local hash="$(cd "$SRC_DIR" 2>/dev/null && git rev-parse HEAD 2>/dev/null || echo none)"
+    echo "${GIT_URL}|${ref}|${hash}"
 }
 
 install_needed() {
@@ -216,6 +210,10 @@ else
     echo "[run] Install up to date (marker match)"
 fi
 
+# Symlinks: official installer expects source + venv inside HERMES_HOME
+ln -snf "$SRC_DIR" "$HERMES_HOME/hermes-agent"
+ln -snf "$VENV_DIR" "$SRC_DIR/venv"
+
 # Link image-installed npm packages into project node_modules (where Hermes expects them)
 if [ ! -e "$SRC_DIR/node_modules/agent-browser" ]; then
     mkdir -p "$SRC_DIR/node_modules"
@@ -228,13 +226,35 @@ HERMES_VERSION=$(hermes --version 2>/dev/null | head -1 || echo "unknown")
 export HERMES_VERSION
 echo "[run] Hermes version: $HERMES_VERSION"
 
-# ── Section 6: Initial config scaffolding ────────────────────────────
-# Hermes creates its own defaults (config.yaml, SOUL.md, etc.) on first run.
-# We only seed .env from the source example if missing.
+# ── Section 6: Initial config scaffolding (mirrors official installer) ─
 if [ ! -f "$HERMES_HOME/.env" ] && [ -f "$SRC_DIR/.env.example" ]; then
     cp -p "$SRC_DIR/.env.example" "$HERMES_HOME/.env"
     chmod 600 "$HERMES_HOME/.env"
     echo "[run] Created .env from source example (chmod 600)"
+fi
+if [ ! -f "$HERMES_HOME/config.yaml" ] && [ -f "$SRC_DIR/cli-config.yaml.example" ]; then
+    cp -p "$SRC_DIR/cli-config.yaml.example" "$HERMES_HOME/config.yaml"
+    echo "[run] Created config.yaml from source example"
+fi
+if [ ! -f "$HERMES_HOME/SOUL.md" ]; then
+    cat > "$HERMES_HOME/SOUL.md" << 'SOUL_EOF'
+# Hermes Agent Persona
+
+<!--
+This file defines the agent's personality and tone.
+The agent will embody whatever you write here.
+Edit this to customize how Hermes communicates with you.
+
+Examples:
+  - "You are a warm, playful assistant who uses kaomoji occasionally."
+  - "You are a concise technical expert. No fluff, just facts."
+  - "You speak like a friendly coworker who happens to know everything."
+
+This file is loaded fresh each message -- no restart needed.
+Delete the contents (or this file) to use the default personality.
+-->
+SOUL_EOF
+    echo "[run] Created SOUL.md template"
 fi
 
 # tmux config (persistent, user-editable)
@@ -390,13 +410,23 @@ start_ttyd
 start_nginx
 
 echo "[run] All services started"
+# Derive base URL from HASS_URL (scheme + host, our port)
+BASE_URL="${HASS_URL:-http://localhost}"
+BASE_SCHEME="${BASE_URL%%://*}"
+BASE_HOST="${BASE_URL#*://}"
+BASE_HOST="${BASE_HOST%%:*}"
+BASE_HOST="${BASE_HOST%%/*}"
+if [ "$BASE_SCHEME" = "https" ]; then
+    BASE_URL="${BASE_SCHEME}://${BASE_HOST}:${HTTPS_PORT}"
+else
+    BASE_URL="${BASE_SCHEME}://${BASE_HOST}:${HTTP_PORT}"
+fi
 echo "─────────────────────────────────────────────"
 echo " ${HERMES_VERSION}"
 echo " Gateway PID: ${GATEWAY_PID}"
-echo " Terminal:    http://localhost:${HTTP_PORT}/terminal/"
-echo " API:         http://localhost:${HTTP_PORT}/v1/"
-echo " HTTPS:       https://localhost:${HTTPS_PORT}/"
-echo " HA Ingress:  sidebar (landing page)"
+echo " Hermes:      ${BASE_URL}/hermes/"
+echo " Terminal:    ${BASE_URL}/terminal/"
+echo " API:         ${BASE_URL}/v1/"
 echo "─────────────────────────────────────────────"
 
 # ── Section 11: Signal handling ──────────────────────────────────────
