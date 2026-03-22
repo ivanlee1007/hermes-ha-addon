@@ -12,11 +12,11 @@
   .titlebar .version{color:#9ca3af;font-size:12px;white-space:nowrap}
   .titlebar .buttons{display:flex;gap:6px;margin:0 auto}
   .titlebar .status{display:flex;gap:6px;font-size:11px;color:#9ca3af}
-  .btn{background:#2563eb;color:white;border:0;border-radius:6px;padding:4px 10px;cursor:pointer;text-decoration:none;display:inline-block;font-size:12px}
+  .btn{background:#009ac7;color:white;border:0;border-radius:6px;padding:4px 10px;cursor:pointer;text-decoration:none;display:inline-block;font-size:12px}
   .btn.secondary{background:#334155}
-  .btn.green{background:#059669}
+  .btn.green{background:#0da035}
   .btn:hover{filter:brightness(1.15)}
-  .btn.active{background:#ca8a04}
+  .btn.active{background:#f36d00}
   .term{flex:1;overflow:hidden;position:relative}
   .term iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:black}
   .term iframe.hidden{display:none}
