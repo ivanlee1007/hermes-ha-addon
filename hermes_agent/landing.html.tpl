@@ -7,49 +7,37 @@
 <style>
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#0b0f14;color:#e6edf3;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-  body{display:flex;flex-direction:column;padding:8px;gap:8px}
-  .header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-height:40px}
-  .header h2{margin:0;font-size:16px;white-space:nowrap}
-  .status{display:flex;gap:8px;font-size:13px;align-items:center;margin-left:auto}
-  .status span{padding:4px 10px;border-radius:8px;background:#0d1117;border:1px solid #1f2937}
-  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  .btn{background:#2563eb;color:white;border:0;border-radius:8px;padding:7px 12px;cursor:pointer;text-decoration:none;display:inline-block;font-size:13px}
+  body{display:flex;flex-direction:column}
+  .titlebar{display:flex;align-items:center;gap:8px;padding:4px 8px;background:#111827;border-bottom:1px solid #1f2937;min-height:32px;flex-shrink:0}
+  .titlebar .version{color:#9ca3af;font-size:12px;white-space:nowrap}
+  .titlebar .buttons{display:flex;gap:6px;margin:0 auto}
+  .titlebar .status{display:flex;gap:6px;font-size:11px;color:#9ca3af}
+  .btn{background:#2563eb;color:white;border:0;border-radius:6px;padding:4px 10px;cursor:pointer;text-decoration:none;display:inline-block;font-size:12px}
   .btn.secondary{background:#334155}
   .btn.green{background:#059669}
-  .btn.small{padding:5px 10px;font-size:12px}
   .btn:hover{filter:brightness(1.15)}
   .btn.active{outline:2px solid #60a5fa;outline-offset:1px}
-  .term{flex:1;min-height:200px;border:1px solid #1f2937;border-radius:8px;overflow:hidden;position:relative}
+  .term{flex:1;overflow:hidden;position:relative}
   .term iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:black}
   .term iframe.hidden{display:none}
-  body.maximized .header,body.maximized .toolbar{display:none}
-  body.maximized .term{border:0;border-radius:0}
-  body.maximized{padding:0;gap:0}
-  .restore-btn{display:none;position:fixed;top:0;left:0;z-index:9999;background:#334155;color:white;border:0;border-radius:0 0 6px 0;padding:4px 8px;cursor:pointer;font-size:12px;opacity:0.6}
-  .restore-btn:hover{opacity:1}
-  body.maximized .restore-btn{display:block}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h2>%%HERMES_VERSION%%</h2>
+<div class="titlebar">
+  <span class="version">%%HERMES_VERSION%%</span>
+  <div class="buttons">
+    <button class="btn active" id="btnHermes" onclick="setMode('hermes')">Hermes</button>
+    <button class="btn secondary" id="btnTerminal" onclick="setMode('terminal')">Terminal</button>
+    <a class="btn green" href="./cert/ca.crt" download="hermes-agent-ca.crt">CA Cert</a>
+  </div>
   <div class="status">
-    <span id="statusGateway">&#x23F3; Gateway: checking&hellip;</span>
-    <span id="statusSecure">&#x1F512; checking&hellip;</span>
+    <span id="statusGateway">&#x23F3; Gateway</span>
+    <span id="statusSecure">&#x1F512;</span>
   </div>
 </div>
 
-<div class="toolbar">
-  <button class="btn active" id="btnHermes" onclick="setMode('hermes')">Hermes</button>
-  <button class="btn secondary" id="btnTerminal" onclick="setMode('terminal')">Terminal</button>
-  <button class="btn small secondary" onclick="toggleMax()">&#x26F6; Maximize</button>
-  <a class="btn green small" href="./cert/ca.crt" download="hermes-agent-ca.crt">&#x1F512; CA Cert</a>
-</div>
-
-<button class="restore-btn" onclick="toggleMax()">&#x29C9;</button>
-
-<div class="term" id="termContainer">
+<div class="term">
   <iframe id="frameHermes" src="./hermes/" title="Hermes Agent"></iframe>
   <iframe id="frameTerminal" src="./terminal/" title="Terminal" class="hidden"></iframe>
 </div>
@@ -71,23 +59,14 @@
     btnTerminal.className = mode === 'terminal' ? 'btn active' : 'btn secondary';
   };
 
-  window.toggleMax = function() {
-    document.body.classList.toggle('maximized');
-  };
-
-  // Status checks
   var s = document.getElementById('statusSecure');
-  s.innerHTML = window.isSecureContext
-    ? '&#x2705; Secure'
-    : '&#x26A0;&#xFE0F; Not secure';
+  s.textContent = window.isSecureContext ? '\u2705 Secure' : '\u26A0\uFE0F Not secure';
 
   var g = document.getElementById('statusGateway');
   fetch('./v1/models', {cache:'no-store'}).then(function(r) {
-    g.innerHTML = r.ok
-      ? '&#x2705; Gateway API'
-      : '&#x1F4A4; Gateway API (not enabled)';
+    g.textContent = r.ok ? '\u2705 Gateway' : '\uD83D\uDCA4 Gateway';
   }).catch(function() {
-    g.innerHTML = '&#x1F4A4; Gateway API (not running)';
+    g.textContent = '\uD83D\uDCA4 Gateway';
   });
 })();
 </script>
