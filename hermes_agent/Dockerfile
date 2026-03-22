@@ -5,19 +5,19 @@ FROM ${BUILD_FROM}
 RUN apt-get update && apt-get install -y --no-install-recommends \
         # Prerequisites
         git nginx rsync tmux \
-        # System Packages
-        ffmpeg ripgrep \
+        # System packages
+        ripgrep ffmpeg \
         # Dependencies
         build-essential python3-dev libffi-dev \
-        # Chromium (deps auto-resolved by apt)
+        # Chromium (Browser Automation)
         chromium \
-        # SQLite with FTS5
-        libsqlite3-dev \
+        # SQLite with FTS5 (Memory)
+        sqlite3 libsqlite3-dev \
         # Homebrew deps
         file \
-        # Python build deps
+        # Python deps
         python3-pip python3-venv \
-        # Networking / dev tools
+        # Extra tools
         bash-completion bat command-not-found dnsutils fd-find less nano \
         netcat-openbsd openssh-client tree unzip vim wget zip \
     && rm -rf /var/lib/apt/lists/* \
