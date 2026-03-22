@@ -91,7 +91,10 @@ http {
         listen %%HTTP_PORT%%;
         server_name _;
 
-        location = / { return 302 /hermes/; }
+        location = / {
+            root /var/www;
+            try_files /landing.html =404;
+        }
 
         location = /hermes { return 302 /hermes/; }
         location /hermes/ {
@@ -148,7 +151,10 @@ http {
         ssl_protocols TLSv1.2 TLSv1.3;
         ssl_ciphers HIGH:!aNULL:!MD5;
 
-        location = / { return 302 /hermes/; }
+        location = / {
+            root /var/www;
+            try_files /landing.html =404;
+        }
 
         location = /hermes { return 302 /hermes/; }
         location /hermes/ {
