@@ -25,7 +25,7 @@
   body.maximized .header,body.maximized .toolbar{display:none}
   body.maximized .term{border:0;border-radius:0}
   body.maximized{padding:0;gap:0}
-  .restore-btn{display:none;position:fixed;top:0;right:0;z-index:9999;background:#334155;color:white;border:0;border-radius:0 0 0 6px;padding:4px 8px;cursor:pointer;font-size:12px;opacity:0.6}
+  .restore-btn{display:none;position:fixed;top:0;left:0;z-index:9999;background:#334155;color:white;border:0;border-radius:0 0 6px 0;padding:4px 8px;cursor:pointer;font-size:12px;opacity:0.6}
   .restore-btn:hover{opacity:1}
   body.maximized .restore-btn{display:block}
 </style>
@@ -47,7 +47,7 @@
   <a class="btn green small" href="./cert/ca.crt" download="hermes-agent-ca.crt">&#x1F512; CA Cert</a>
 </div>
 
-<button class="restore-btn" onclick="toggleMax()">&#x2715;</button>
+<button class="restore-btn" onclick="toggleMax()">&#x29C9;</button>
 
 <div class="term" id="termContainer">
   <iframe id="frameHermes" src="./hermes/" title="Hermes Agent"></iframe>
