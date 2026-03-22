@@ -263,7 +263,7 @@ fi
 # Link image-installed npm packages into project node_modules (where Hermes expects them)
 if [ ! -e "$SRC_DIR/node_modules/agent-browser" ]; then
     mkdir -p "$SRC_DIR/node_modules"
-    ln -snf /usr/local/lib/node_modules/agent-browser "$SRC_DIR/node_modules/agent-browser"
+    ln -snf /usr/lib/node_modules/agent-browser "$SRC_DIR/node_modules/agent-browser"
     echo "[run] Linked agent-browser into project"
 fi
 
@@ -306,9 +306,9 @@ fi
 # tmux config (persistent, user-editable)
 if [ ! -f /config/.tmux.conf ]; then
     cat > /config/.tmux.conf << 'TMUX'
-set -g mouse on
-set -g history-limit 50000
 set -g default-terminal "tmux-256color"
+set -g history-limit 100000
+set -g mouse on
 TMUX
     echo "[run] Created default .tmux.conf"
 fi
