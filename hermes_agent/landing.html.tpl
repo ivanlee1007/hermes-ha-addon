@@ -10,7 +10,6 @@
   body{display:flex;flex-direction:column;padding:8px;gap:8px}
   .header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-height:40px}
   .header h2{margin:0;font-size:16px;white-space:nowrap}
-  .header .version{color:#9ca3af;font-size:13px}
   .status{display:flex;gap:8px;font-size:13px;align-items:center;margin-left:auto}
   .status span{padding:4px 10px;border-radius:8px;background:#0d1117;border:1px solid #1f2937}
   .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -26,13 +25,15 @@
   body.maximized .header,body.maximized .toolbar{display:none}
   body.maximized .term{border:0;border-radius:0}
   body.maximized{padding:0;gap:0}
+  .restore-btn{display:none;position:fixed;top:4px;right:4px;z-index:9999;background:#334155;color:white;border:0;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;opacity:0.6}
+  .restore-btn:hover{opacity:1}
+  body.maximized .restore-btn{display:block}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h2>Hermes Agent</h2>
-  <span class="version">%%HERMES_VERSION%%</span>
+  <h2>%%HERMES_VERSION%%</h2>
   <div class="status">
     <span id="statusGateway">&#x23F3; Gateway: checking&hellip;</span>
     <span id="statusSecure">&#x1F512; checking&hellip;</span>
@@ -42,9 +43,11 @@
 <div class="toolbar">
   <button class="btn active" id="btnHermes" onclick="setMode('hermes')">Hermes</button>
   <button class="btn secondary" id="btnTerminal" onclick="setMode('terminal')">Terminal</button>
-  <button class="btn small secondary" id="btnMax" onclick="toggleMax()">&#x26F6; Maximize</button>
+  <button class="btn small secondary" onclick="toggleMax()">&#x26F6; Maximize</button>
   <a class="btn green small" href="./cert/ca.crt" download="hermes-agent-ca.crt">&#x1F512; CA Cert</a>
 </div>
+
+<button class="restore-btn" onclick="toggleMax()">&#x2715; Restore</button>
 
 <div class="term" id="termContainer">
   <iframe id="frameHermes" src="./hermes/" title="Hermes Agent"></iframe>
@@ -71,13 +74,6 @@
   window.toggleMax = function() {
     document.body.classList.toggle('maximized');
   };
-
-  // Escape key exits maximize
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && document.body.classList.contains('maximized')) {
-      document.body.classList.remove('maximized');
-    }
-  });
 
   // Status checks
   var s = document.getElementById('statusSecure');
