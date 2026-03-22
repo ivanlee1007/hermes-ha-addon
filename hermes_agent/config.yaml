@@ -1,5 +1,5 @@
 name: Hermes Agent
-version: "0.5.7"
+version: "0.5.8"
 slug: hermes_agent
 description: "NousResearch Hermes Agent - persistent AI agent with memory, skills, and multi-platform messaging"
 url: "https://github.com/NousResearch/hermes-agent"
@@ -14,8 +14,9 @@ ingress_port: 48099
 panel_icon: mdi:robot-outline
 panel_title: Hermes Agent
 map:
-  - type: config
-    read_only: false
+  - addon_config:rw
+  - media:rw
+  - share:rw
 ports:
   8080/tcp: 8080
   8443/tcp: 8443
