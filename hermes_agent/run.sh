@@ -100,9 +100,11 @@ export GOPATH="$GO_DIR"
 export GOBIN="$GO_DIR/bin"
 export NPM_CONFIG_PREFIX="$NODE_GLOBAL"
 export PATH="$VENV_DIR/bin:$GO_DIR/bin:/usr/local/go/bin:$NODE_GLOBAL/bin:$BREW_PERSIST/bin:$BREW_PERSIST/sbin:\$PATH"
+export PS1='\[\033[01;34m\]\w\[\033[00m\]\\\$ '
 cd "$HERMES_HOME"
-# Source persistent user profile if it exists (agent/user customizations)
+# Source persistent user customizations if they exist
 [ -f "$HERMES_HOME/profile.sh" ] && . "$HERMES_HOME/profile.sh"
+[ -f "$HERMES_HOME/.bash_aliases" ] && . "$HERMES_HOME/.bash_aliases"
 BASHRC
 
 # profile.d: hermes autostart for LOGIN shells only
