@@ -1,6 +1,8 @@
 # Hermes Agent Home Assistant Add-on
 
-[NousResearch Hermes Agent](https://github.com/NousResearch/hermes-agent) packaged as a Home Assistant add-on. Persistent AI agent with memory, self-improving skills, multi-platform messaging, and a plugin architecture for custom tools.
+[Hermes Agent](https://hermes-agent.nousresearch.com/) packaged as a [Home Assistant](https://home-assistant.io/) add-on/app. Persistent AI agent with memory, self-improving skills, multi-platform messaging, and a plugin architecture for custom tools.
+
+> The self-improving AI agent built by [Nous Research](https://nousresearch.com/). Home Assistant Add-on by [Wolfram Ravenwolf](https://x.com/WolframRvnwlf).
 
 ## Features
 
@@ -16,7 +18,7 @@
 
 ## Installation
 
-1. Add this repository to Home Assistant: **Settings > Add-ons > Add-on Store > ⋮ > Repositories**
+1. Add this repository to Home Assistant: **Settings > Apps > Install app > ⋮ > Repositories**
 2. Paste the repository URL and click **Add**
 3. Find **Hermes Agent** in the store and click **Install**
 4. Start the addon and open **Hermes Agent** from the sidebar
@@ -24,14 +26,14 @@
 
 ## Configuration
 
-Addon-level options are configured in the HA UI (Settings > Add-ons > Hermes Agent > Configuration):
+Addon-level options are configured in the HA UI (Settings > Apps > Hermes Agent > Configuration):
 
 | Option                | Default                           | Description                                                                     |
 | --------------------- | --------------------------------- | ------------------------------------------------------------------------------- |
 | `git_url`             | NousResearch repo                 | Git repository URL (clear to reset to default)                                  |
 | `git_ref`             | *(empty)*                         | Branch, tag, or commit (empty = repo's default branch)                          |
 | `git_token`           |                                   | Token for private repos + exported as `GITHUB_TOKEN` for gh CLI                 |
-| `auto_update`         | `false`                           | Pull latest changes on restart (stashes local modifications)                    |
+| `auto_update`         | `false`                           | Pull latest changes on restart (preserves local modifications)                  |
 | `hass_url`            | `http://homeassistant.local:8123` | Home Assistant URL for API access                                               |
 | `homeassistant_token` |                                   | Long-lived access token for HA API integration                                  |
 | `hermes_home`         | `.hermes`                         | Agent profile directory (relative to ~). Change to switch profiles (e.g. "amy") |
@@ -51,13 +53,23 @@ hermes gateway setup  # Configure messaging platforms
 
 The addon provides multiple access paths:
 
-| Path                   | Description                                                              |
-| ---------------------- | ------------------------------------------------------------------------ |
-| **HA Sidebar**         | Landing page with embedded terminal, mode switching, status              |
-| `/hermes/`             | Hermes Agent (login shell -- starts hermes, crash drops to shell)        |
-| `/terminal/`           | Shell terminal (non-login shell -- plain shell, hermes not auto-started) |
-| `/v1/chat/completions` | OpenAI-compatible API endpoint                                           |
-| `/cert/ca.crt`         | CA certificate download (for trusting self-signed HTTPS)                 |
+| Path                       | Description                                                              |
+| -------------------------- | ------------------------------------------------------------------------ |
+| **HA Sidebar**             | Landing page with embedded terminal, mode switching, status              |
+| `/hermes/`                 | Hermes Agent (login shell -- starts hermes, crash drops to shell)        |
+| `/terminal/`               | Shell terminal (non-login shell -- plain shell, hermes not auto-started) |
+| `/cert/ca.crt`             | CA certificate download (for trusting self-signed HTTPS)                 |
+
+**OpenAI-compatible API** (connect Open WebUI, SillyTavern, etc.):
+
+| Endpoint                      | Method | Description                                       |
+| ----------------------------- | ------ | ------------------------------------------------- |
+| `/v1/chat/completions`        | POST   | Chat Completions (stateless)                      |
+| `/v1/responses`               | POST   | Responses API (stateful via previous_response_id) |
+| `/v1/responses/{response_id}` | GET    | Retrieve a stored response                        |
+| `/v1/responses/{response_id}` | DELETE | Delete a stored response                          |
+| `/v1/models`                  | GET    | List available models                             |
+| `/health`                     | GET    | Health check                                      |
 
 **Ports:**
 
@@ -66,7 +78,18 @@ The addon provides multiple access paths:
 | **8080** | HTTP access (all paths above)                        |
 | **8443** | HTTPS access (same paths, TLS with self-signed cert) |
 
-Both ports are configurable in the HA addon network settings.
+Both ports are configurable in the HA addon network settings. Use HTTPS (8443) for secure access. The HTTP port (8080) is intended for TLS-terminating reverse proxies (Cloudflare, NPM, Caddy, etc.).
+
+### TLS Certificates
+
+On first start, self-signed certificates are auto-generated in `~/.certs/`. To use your own:
+
+1. Stop the addon
+2. Replace `~/.certs/server.crt` and `~/.certs/server.key` with your own
+3. Optionally replace `~/.certs/ca.crt` if you have a custom CA
+4. Start the addon
+
+The addon will use existing certificates and never overwrite them.
 
 ## Architecture
 
