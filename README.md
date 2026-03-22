@@ -138,6 +138,9 @@ Login shells start Hermes automatically. Non-login shells provide a plain shell 
 ├── .hermes_profile        # Env vars + PATH (regenerated)
 ├── .profile               # Login shell config (starts hermes)
 └── .tmux.conf             # tmux config
+
+/media/                    # HA media directory (shared, visible in HA media browser)
+/share/                    # HA shared directory (shared between all addons)
 ```
 
 ### Container Toolchain
@@ -154,16 +157,17 @@ Pre-installed at build time:
 
 ## SSH Access
 
-Connect to the Hermes session (login shell -- starts hermes):
+The container has no SSH server — access is via SSH to HA + docker exec. The tmux sessions are shared with the web terminal (same session in HA sidebar and SSH).
 
 ```bash
-ssh -tp <port> root@<ha-host> "docker exec -it addon_<slug>_hermes_agent tmux -u new -A -s hermes /usr/bin/bash -l"
-```
+# Plain shell (new session, not shared with web terminal)
+ssh -tp <port> root@<ha-host> "docker exec -it \$(docker ps -qf name=hermes_agent) bash"
 
-Connect to the terminal session (plain shell):
+# Hermes (shared tmux session — same as HA sidebar "Hermes" tab)
+ssh -tp <port> root@<ha-host> "docker exec -it \$(docker ps -qf name=hermes_agent) tmux -u new -A -s hermes bash -l"
 
-```bash
-ssh -tp <port> root@<ha-host> "docker exec -it addon_<slug>_hermes_agent tmux -u new -A -s terminal /usr/bin/bash"
+# Terminal (shared tmux session — same as HA sidebar "Terminal" tab)
+ssh -tp <port> root@<ha-host> "docker exec -it \$(docker ps -qf name=hermes_agent) tmux -u new -A -s terminal bash"
 ```
 
 ## Supported Architectures
