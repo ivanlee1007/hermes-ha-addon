@@ -30,7 +30,7 @@
     <button class="btn active" id="btnHermes" onclick="setMode('hermes')">Hermes</button>
     <button class="btn secondary" id="btnTerminal" onclick="setMode('terminal')">Terminal</button>
     <a class="btn green" href="./cert/ca.crt" download="hermes-agent-ca.crt">CA Cert</a>
-    <a class="btn small secondary" id="btnAppInfo" href="/config/app/%%ADDON_SLUG%%/info" target="_blank" style="display:none">App Info</a>
+    <a class="btn small" id="btnAppInfo" href="/config/app/%%ADDON_SLUG%%/info" target="_blank" style="display:none">App Info</a>
   </div>
   <div class="status">
     <span id="statusGateway">&#x23F3; Gateway</span>
