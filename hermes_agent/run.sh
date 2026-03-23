@@ -21,6 +21,8 @@ AUTO_UPDATE=$(opt_bool auto_update)
 HASS_URL=$(opt hass_url)
 HASS_TOKEN=$(opt homeassistant_token)
 HERMES_HOME_DIR=$(opt hermes_home)
+ENABLE_PORTS=$(opt_bool enable_ports)
+ENABLE_API=$(opt_bool enable_api)
 ACCESS_PASSWORD=$(opt access_password)
 PREFER_IPV4=$(opt_bool prefer_ipv4_dns)
 
@@ -374,10 +376,23 @@ if [ -n "$HASS_URL" ]; then
     echo "[run] HASS_URL: $HASS_URL"
 fi
 
-# Enable OpenAI-compatible API server on the Gateway
-export API_SERVER_ENABLED=true
-export API_SERVER_PORT=8642
-export API_SERVER_HOST=127.0.0.1
+# OpenAI-compatible API server on the Gateway (port 8642, host 127.0.0.1 = Hermes defaults)
+if [ "$ENABLE_API" = "true" ]; then
+    export API_SERVER_ENABLED=true
+    echo "[run] API server enabled"
+else
+    export API_SERVER_ENABLED=false
+    echo "[run] API server disabled"
+fi
+# Write API_SERVER_ENABLED to .env (Hermes dotenv override=True)
+# PORT and HOST are fixed (nginx upstream hardcoded to 127.0.0.1:8642)
+if [ -f "$HERMES_HOME/.env" ]; then
+    if grep -q "^API_SERVER_ENABLED=" "$HERMES_HOME/.env"; then
+        sed -i "s|^API_SERVER_ENABLED=.*|API_SERVER_ENABLED=${API_SERVER_ENABLED}|" "$HERMES_HOME/.env"
+    else
+        echo "API_SERVER_ENABLED=${API_SERVER_ENABLED}" >> "$HERMES_HOME/.env"
+    fi
+fi
 if [ -n "$ACCESS_PASSWORD" ]; then
     export API_SERVER_KEY="$ACCESS_PASSWORD"
     # Write to .env so Hermes' dotenv loader picks it up (override=True)
@@ -402,9 +417,6 @@ fi
 cat > /config/.hermes_profile << ENVSH
 export HERMES_HOME="$HERMES_HOME"
 export HERMES_VERSION="$HERMES_VERSION"
-export API_SERVER_ENABLED=true
-export API_SERVER_HOST=127.0.0.1
-export API_SERVER_PORT=8642
 $([ -n "$GIT_TOKEN" ] && echo "export GITHUB_TOKEN=\"$GIT_TOKEN\"")
 export GOBIN="$GO_DIR/bin"
 export GOPATH="$GO_DIR"
@@ -451,17 +463,33 @@ else
     AUTH_BASIC_OFF=''
 fi
 
+# Render ports config if enabled
+if [ "$ENABLE_PORTS" = "true" ]; then
+    cp /etc/nginx/nginx-ports.conf.tpl /etc/nginx/ports.conf
+    sed -i \
+        -e "s|%%HTTP_PORT%%|${HTTP_PORT}|g" \
+        -e "s|%%HTTPS_PORT%%|${HTTPS_PORT}|g" \
+        -e "s|%%TTYD_TERMINAL_PORT%%|${TTYD_TERMINAL_PORT}|g" \
+        -e "s|%%TTYD_HERMES_PORT%%|${TTYD_HERMES_PORT}|g" \
+        -e "s|%%CERTS_DIR%%|${CERTS_DIR}|g" \
+        -e "s|%%AUTH_BASIC_ON%%|${AUTH_BASIC_ON}|g" \
+        -e "s|%%AUTH_BASIC_OFF%%|${AUTH_BASIC_OFF}|g" \
+        /etc/nginx/ports.conf
+    INCLUDE_PORTS="include /etc/nginx/ports.conf;"
+    echo "[run] HTTP/HTTPS ports enabled"
+else
+    INCLUDE_PORTS="# ports disabled"
+    echo "[run] HTTP/HTTPS ports disabled (Ingress only)"
+fi
+
 cp /etc/nginx/nginx.conf.tpl /etc/nginx/nginx.conf
 sed -i \
     -e "s|%%INGRESS_PORT%%|${INGRESS_PORT}|g" \
-    -e "s|%%HTTP_PORT%%|${HTTP_PORT}|g" \
-    -e "s|%%HTTPS_PORT%%|${HTTPS_PORT}|g" \
     -e "s|%%TTYD_TERMINAL_PORT%%|${TTYD_TERMINAL_PORT}|g" \
     -e "s|%%TTYD_HERMES_PORT%%|${TTYD_HERMES_PORT}|g" \
     -e "s|%%CERTS_DIR%%|${CERTS_DIR}|g" \
     -e "s|%%HERMES_VERSION%%|${HERMES_VERSION}|g" \
-    -e "s|%%AUTH_BASIC_ON%%|${AUTH_BASIC_ON}|g" \
-    -e "s|%%AUTH_BASIC_OFF%%|${AUTH_BASIC_OFF}|g" \
+    -e "s|%%INCLUDE_PORTS%%|${INCLUDE_PORTS}|g" \
     /etc/nginx/nginx.conf
 
 # Render landing page

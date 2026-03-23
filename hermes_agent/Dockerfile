@@ -75,6 +75,7 @@ RUN su - linuxbrew -c \
 # ── Addon files ──────────────────────────────────────────────────────
 COPY run.sh /
 COPY nginx.conf.tpl /etc/nginx/nginx.conf.tpl
+COPY nginx-ports.conf.tpl /etc/nginx/nginx-ports.conf.tpl
 COPY landing.html.tpl /var/www/landing.html.tpl
 COPY loading.html /var/www/loading.html
 COPY brew-wrapper.sh /usr/local/bin/brew-wrapper

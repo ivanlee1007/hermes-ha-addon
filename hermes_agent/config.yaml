@@ -1,5 +1,5 @@
 name: Hermes Agent
-version: "0.9.15"
+version: "0.9.16"
 slug: hermes_agent
 description: "The self-improving AI agent built by Nous Research. Home Assistant add-on by Wolfram Ravenwolf."
 url: "https://github.com/WolframRavenwolf/hermes-ha-addon"
@@ -18,7 +18,7 @@ map:
   - media:rw
   - share:rw
 ports:
-  8080/tcp: 8080
+  8080/tcp: null
   8443/tcp: 8443
 ports_description:
   8080/tcp: "HTTP: /hermes/ (agent) · /terminal/ (shell) · /v1/ (OpenAI API)"
@@ -31,6 +31,8 @@ options:
   hass_url: "http://homeassistant.local:8123"
   homeassistant_token: ""
   hermes_home: ".hermes"
+  enable_ports: false
+  enable_api: false
   access_password: ""
   prefer_ipv4_dns: true
   env_vars:
@@ -44,6 +46,8 @@ schema:
   hass_url: "url?"
   homeassistant_token: "password?"
   hermes_home: "str?"
+  enable_ports: "bool"
+  enable_api: "bool"
   access_password: "password?"
   prefer_ipv4_dns: "bool"
   env_vars:

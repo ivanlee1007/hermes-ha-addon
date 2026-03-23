@@ -27,6 +27,17 @@ configuration:
     description: >-
       Directory name for Hermes Agent data (relative to /config).
       Default ".hermes". Change to e.g. "amy" for /config/amy/.
+  enable_ports:
+    name: Enable HTTP/HTTPS Ports
+    description: >-
+      Enable direct HTTP/HTTPS access (terminal + API).
+      Set an access password to secure these ports.
+  enable_api:
+    name: Enable OpenAI API
+    description: >-
+      Enable the OpenAI-compatible API server (/v1/chat/completions).
+      Required for connecting Open WebUI, SillyTavern, etc.
+      The access password doubles as the API key (Authorization: Bearer).
   access_password:
     name: Access Password
     description: >-
