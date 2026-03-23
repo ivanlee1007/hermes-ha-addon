@@ -35,7 +35,7 @@ configuration:
   access_password:
     name: Access Password
     description: >-
-      ⚠️ Password for HTTP/HTTPS access (web terminal).
+      ⚠️ Password for HTTP/HTTPS access (web terminal). Username: hermes.
       Also used as the server API key.
   env_vars:
     name: Hermes .env Variables

@@ -55,7 +55,9 @@ hermes gateway setup  # Configure messaging platforms
 
 ## Access
 
-The add-on is accessible via the **Home Assistant Sidebar** (landing page with embedded terminal, mode switching, and status display) and via direct URLs. Direct HTTP/HTTPS access requires `enable_ports` in the add-on configuration. Replace `homeassistant.local` with your Home Assistant hostname or IP.
+The add-on is accessible via the **Home Assistant Sidebar** (landing page with embedded terminal, mode switching, and status display) and, optionally, via direct URLs. Replace `homeassistant.local` with your Home Assistant hostname or IP.
+
+Direct HTTP/HTTPS access requires `enable_ports` (**Enable HTTP/HTTPS Ports**) in the add-on configuration. Set an **Access Password** to secure these ports (username: `hermes`).
 
 ### Web Terminal
 
@@ -69,6 +71,8 @@ The add-on is accessible via the **Home Assistant Sidebar** (landing page with e
 
 Connect [Open WebUI](https://github.com/open-webui/open-webui), [SillyTavern](https://github.com/SillyTavern/SillyTavern), etc.
 
+OpenAI-compatible API access requires `enable_api` (**Enable API Server**) in the add-on configuration. The **Access Password** doubles as the server API key.
+
 | URL / Endpoint                                                | Method | Description                                       |
 | ------------------------------------------------------------- | ------ | ------------------------------------------------- |
 | `https://homeassistant.local:8443/v1/chat/completions`        | POST   | Chat Completions (stateless)                      |
@@ -80,12 +84,12 @@ Connect [Open WebUI](https://github.com/open-webui/open-webui), [SillyTavern](ht
 
 ### Ports
 
+Both ports are configurable in the Home Assistant add-on network settings. Use the HTTPS port (8443) with an access password for secure access. The HTTP port (8080) is intended for TLS-terminating reverse proxies and disabled by default.
+
 | Port     | Description                                          |
 | -------- | ---------------------------------------------------- |
 | **8080** | HTTP access (all URLs above, replace 8443 with 8080) |
 | **8443** | HTTPS access (TLS with self-signed cert)             |
-
-Both ports are configurable in the Home Assistant add-on network settings. Use HTTPS (8443) for secure access. The HTTP port (8080) is intended for TLS-terminating reverse proxies (Cloudflare, NPM, Caddy, etc.).
 
 ### SSH
 
