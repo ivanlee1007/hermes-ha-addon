@@ -6,9 +6,9 @@
 <title>Hermes Agent</title>
 <style>
   *{box-sizing:border-box}
-  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#0b0f14;color:#e6edf3;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#111111;color:#e6edf3;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
   body{display:flex;flex-direction:column}
-  .titlebar{display:flex;align-items:center;gap:8px;padding:4px 8px;background:#111827;border-bottom:1px solid #1f2937;min-height:32px;flex-shrink:0}
+  .titlebar{display:flex;align-items:center;gap:8px;padding:4px 8px;background:#1c1c1c;border-bottom:1px solid #1f2937;min-height:32px;flex-shrink:0}
   .titlebar .version{color:#ffd700;font-size:12px;white-space:nowrap}
   .titlebar .buttons{display:flex;gap:6px;margin:0 auto}
   .titlebar .status{display:flex;gap:6px;font-size:11px;color:#9ca3af}
