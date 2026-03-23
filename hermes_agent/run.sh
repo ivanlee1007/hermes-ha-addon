@@ -39,8 +39,7 @@ if [ "$PREFER_IPV4" = "true" ]; then
     echo "[run] IPv4 DNS priority: enabled"
 fi
 
-# Core paths
-export HOME="/config"
+# Core paths (HOME=/config set in Dockerfile ENV)
 export HERMES_HOME="$HOME/${HERMES_HOME_DIR:-.hermes}"
 echo "[run] HERMES_HOME: $HERMES_HOME"
 
