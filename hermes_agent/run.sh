@@ -141,16 +141,24 @@ PS1='\[\033[01;34m\]\w\[\033[00m\]\$ '
 # Colors
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
-    alias ls='ls --color=auto'
-    alias grep='grep --color=auto'
-    alias fgrep='fgrep --color=auto'
+    alias diff='diff --color=auto'
     alias egrep='egrep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias grep='grep --color=auto'
+    alias ls='ls --color=auto'
 fi
 
-# Aliases
-alias ll='ls -l'
-alias la='ls -A'
+# ls aliases
 alias l='ls -CF'
+alias la='ls -A'
+alias ll='ls -l'
+alias lla='ls -Al'
+
+# Safety aliases (running as root)
+alias cp='cp -i'
+alias ln='ln -i'
+alias mv='mv -i'
+alias rm='rm -i'
 
 # Alias definitions
 [ -f ~/.bash_aliases ] && . ~/.bash_aliases
