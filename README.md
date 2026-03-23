@@ -55,7 +55,7 @@ hermes gateway setup  # Configure messaging platforms
 
 ## Access
 
-The add-on is accessible via the **Home Assistant Sidebar** (landing page with embedded terminal, mode switching, and status display) and via direct URLs. Replace `homeassistant.local` with your Home Assistant hostname or IP.
+The add-on is accessible via the **Home Assistant Sidebar** (landing page with embedded terminal, mode switching, and status display) and via direct URLs. Direct HTTP/HTTPS access requires `enable_ports` in the add-on configuration. Replace `homeassistant.local` with your Home Assistant hostname or IP.
 
 ### Web Terminal
 
