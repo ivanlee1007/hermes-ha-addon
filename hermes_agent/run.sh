@@ -451,7 +451,7 @@ start_gateway() {
     echo "[run] Starting Hermes gateway..."
     mkdir -p "$HERMES_HOME/logs"
     cd "$HERMES_HOME"
-    hermes gateway run >> "$HERMES_HOME/logs/gateway.log" 2>&1 &
+    hermes gateway run 2>&1 | tee -a "$HERMES_HOME/logs/gateway.log" &
     GATEWAY_PID=$!
     echo "[run] Gateway started (PID: $GATEWAY_PID)"
 }
