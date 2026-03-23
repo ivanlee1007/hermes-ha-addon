@@ -74,7 +74,8 @@ http {
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_buffering off;
-            proxy_read_timeout 300s;
+            proxy_read_timeout 3600s;
+            proxy_send_timeout 3600s;
         }
 
         # CA certificate download
@@ -133,7 +134,8 @@ http {
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_buffering off;
-            proxy_read_timeout 300s;
+            proxy_read_timeout 3600s;
+            proxy_send_timeout 3600s;
         }
 
         location = /cert/ca.crt {
@@ -199,7 +201,8 @@ http {
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-Proto https;
             proxy_buffering off;
-            proxy_read_timeout 300s;
+            proxy_read_timeout 3600s;
+            proxy_send_timeout 3600s;
         }
 
         location = /cert/ca.crt {
