@@ -128,7 +128,7 @@ The add-on will use existing certificates and never overwrite them.
 
 Three services in a Debian Bookworm container:
 
-1. **Hermes Gateway** (`hermes gateway run`) -- persistent AI agent daemon with OpenAI-compatible API server and messaging platform connectors
+1. **Hermes Gateway** (`hermes gateway run`) -- persistent AI agent daemon with OpenAI-compatible API server and messaging platform connectors. Logs visible in the Home Assistant add-on log and in `~/.hermes/logs/gateway.log`.
 2. **ttyd** (x2) -- web terminals backed by persistent tmux sessions (`hermes` + `terminal`)
 3. **nginx** -- HTTP, HTTPS, and Home Assistant ingress proxy routing to terminal + API
 
