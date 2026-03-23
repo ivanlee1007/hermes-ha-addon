@@ -20,6 +20,7 @@
   .term{flex:1;overflow:hidden;position:relative}
   .term iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:black}
   .term iframe.hidden{display:none}
+  .term .no-terminal{display:none;justify-content:center;align-items:center;height:100%;color:#9ca3af;font-size:14px}
 </style>
 </head>
 <body>
@@ -41,6 +42,7 @@
 <div class="term">
   <iframe id="frameHermes" src="./hermes/" title="Hermes Agent"></iframe>
   <iframe id="frameTerminal" src="./terminal/" title="Terminal" class="hidden"></iframe>
+  <div id="noTerminal" class="no-terminal">Web terminal is available via the Home Assistant sidebar.</div>
 </div>
 
 <script>
@@ -60,10 +62,22 @@
     btnTerminal.className = mode === 'terminal' ? 'btn active' : 'btn secondary';
   };
 
-  // Show App Info button only when inside HA ingress iframe
+  // Detect context: iframe = HA ingress, top-level = direct port access
   try { var inIframe = window !== window.top; } catch(e) { var inIframe = true; }
   if (inIframe) {
+    // Ingress: always show everything
     document.getElementById('btnAppInfo').style.display = '';
+  } else {
+    // Direct ports: respect config flags
+    var showTerminal = %%SHOW_TERMINAL%%;
+    if (!showTerminal) {
+      btnHermes.style.display = 'none';
+      btnTerminal.style.display = 'none';
+      frameHermes.src = '';
+      frameHermes.className = 'hidden';
+      frameTerminal.src = '';
+      document.getElementById('noTerminal').style.display = 'flex';
+    }
   }
 
   var s = document.getElementById('statusSecure');

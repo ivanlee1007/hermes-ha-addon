@@ -36,8 +36,8 @@ Add-on-level options are configured in the Home Assistant UI (Settings > Apps > 
 | `auto_update`         | `false`                                            | Pull latest changes on restart (preserves local modifications)                  |
 | `hass_url`            | `http://homeassistant.local:8123`                  | Home Assistant URL for API access                                               |
 | `homeassistant_token` |                                                    | Long-lived access token for Home Assistant API integration                      |
-| `enable_ports`        | `false`                                            | Enable direct HTTP/HTTPS access (web terminal + API server)                     |
-| `enable_api`          | `false`                                            | Enable the OpenAI-compatible API server (requires direct HTTP/HTTPS access)     |
+| `enable_terminal`     | `false`                                            | Enable web terminal on direct HTTP/HTTPS ports                                  |
+| `enable_api`          | `false`                                            | Enable the OpenAI-compatible API server on direct HTTP/HTTPS ports              |
 | `access_password`     |                                                    | Password for HTTP/HTTPS access (web terminal). Also used as the server API key  |
 | `env_vars`            | `OPENROUTER_API_KEY` (example)                     | Hermes .env variables — written to `~/.hermes/.env` on each start               |
 | `hermes_home`         | `.hermes`                                          | Agent profile directory (relative to ~). Change to switch profiles (e.g. "amy") |
@@ -57,7 +57,7 @@ hermes gateway setup  # Configure messaging platforms
 
 The add-on is accessible via the **Home Assistant Sidebar** (landing page with embedded terminal, mode switching, and status display) and, optionally, via direct URLs. Replace `homeassistant.local` with your Home Assistant hostname or IP.
 
-Direct HTTP/HTTPS access requires `enable_ports` (**Enable HTTP/HTTPS Ports**) in the add-on configuration. Set an **Access Password** to secure these ports (username: `hermes`).
+Direct HTTP/HTTPS access requires `enable_terminal` (**Enable Web Terminal**) and/or `enable_api` (**Enable API Server**) in the add-on configuration. Set an **Access Password** to secure these ports (username: `hermes`).
 
 ### Web Terminal
 

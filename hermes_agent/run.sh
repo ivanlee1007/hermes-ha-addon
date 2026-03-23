@@ -21,7 +21,7 @@ AUTO_UPDATE=$(opt_bool auto_update)
 HASS_URL=$(opt hass_url)
 HASS_TOKEN=$(opt homeassistant_token)
 HERMES_HOME_DIR=$(opt hermes_home)
-ENABLE_PORTS=$(opt_bool enable_ports)
+ENABLE_TERMINAL=$(opt_bool enable_terminal)
 ENABLE_API=$(opt_bool enable_api)
 ACCESS_PASSWORD=$(opt access_password)
 
@@ -463,8 +463,8 @@ else
     AUTH_BASIC_OFF=''
 fi
 
-# Render ports config if enabled
-if [ "$ENABLE_PORTS" = "true" ]; then
+# Render ports config if terminal or API enabled
+if [ "$ENABLE_TERMINAL" = "true" ] || [ "$ENABLE_API" = "true" ]; then
     cp /etc/nginx/nginx-ports.conf.tpl /etc/nginx/ports.conf
     sed -i \
         -e "s|%%HTTP_PORT%%|${HTTP_PORT}|g" \
@@ -475,11 +475,21 @@ if [ "$ENABLE_PORTS" = "true" ]; then
         -e "s|%%AUTH_BASIC_ON%%|${AUTH_BASIC_ON}|g" \
         -e "s|%%AUTH_BASIC_OFF%%|${AUTH_BASIC_OFF}|g" \
         /etc/nginx/ports.conf
+    # Conditionally remove terminal/API locations
+    if [ "$ENABLE_TERMINAL" != "true" ]; then
+        sed -i '/# TERMINAL_START/,/# TERMINAL_END/d' /etc/nginx/ports.conf
+        echo "[run] Web terminal: disabled on direct ports"
+    else
+        echo "[run] Web terminal: enabled on direct ports"
+    fi
+    if [ "$ENABLE_API" != "true" ]; then
+        sed -i '/# API_START/,/# API_END/d' /etc/nginx/ports.conf
+    fi
     INCLUDE_PORTS="include /etc/nginx/ports.conf;"
-    echo "[run] HTTP/HTTPS ports enabled"
+    echo "[run] Direct ports: enabled (HTTP: $HTTP_PORT, HTTPS: $HTTPS_PORT)"
 else
-    INCLUDE_PORTS="# ports disabled"
-    echo "[run] HTTP/HTTPS ports disabled (Ingress only)"
+    INCLUDE_PORTS="# direct ports disabled"
+    echo "[run] Direct ports: disabled (Ingress only)"
 fi
 
 cp /etc/nginx/nginx.conf.tpl /etc/nginx/nginx.conf
@@ -494,10 +504,15 @@ sed -i \
 
 # Render landing page
 ADDON_SLUG=$(hostname | tr '-' '_')
+SHOW_TERMINAL="false"
+if [ "$ENABLE_TERMINAL" = "true" ]; then
+    SHOW_TERMINAL="true"
+fi
 cp /var/www/landing.html.tpl /var/www/landing.html
 sed -i \
     -e "s|%%HERMES_VERSION%%|${HERMES_VERSION}|g" \
     -e "s|%%ADDON_SLUG%%|${ADDON_SLUG}|g" \
+    -e "s|%%SHOW_TERMINAL%%|${SHOW_TERMINAL}|g" \
     /var/www/landing.html
 
 echo "[run] Nginx configured (ingress: $INGRESS_PORT, HTTP: $HTTP_PORT, HTTPS: $HTTPS_PORT)"

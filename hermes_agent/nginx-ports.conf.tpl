@@ -10,6 +10,7 @@
             try_files /landing.html =404;
         }
 
+        # TERMINAL_START
         location = /hermes { return 302 /hermes/; }
         location /hermes/ {
             proxy_pass http://ttyd_hermes;
@@ -35,7 +36,9 @@
             proxy_read_timeout 3600s;
             proxy_send_timeout 3600s;
         }
+        # TERMINAL_END
 
+        # API_START
         location /v1/ {
             %%AUTH_BASIC_OFF%%
             proxy_pass http://hermes_api;
@@ -46,6 +49,7 @@
             proxy_read_timeout 3600s;
             proxy_send_timeout 3600s;
         }
+        # API_END
 
         location = /cert/ca.crt {
             alias %%CERTS_DIR%%/ca.crt;
@@ -78,6 +82,7 @@
             try_files /landing.html =404;
         }
 
+        # TERMINAL_START
         location = /hermes { return 302 /hermes/; }
         location /hermes/ {
             proxy_pass http://ttyd_hermes;
@@ -105,7 +110,9 @@
             proxy_read_timeout 3600s;
             proxy_send_timeout 3600s;
         }
+        # TERMINAL_END
 
+        # API_START
         location /v1/ {
             %%AUTH_BASIC_OFF%%
             proxy_pass http://hermes_api;
@@ -117,6 +124,7 @@
             proxy_read_timeout 3600s;
             proxy_send_timeout 3600s;
         }
+        # API_END
 
         location = /cert/ca.crt {
             alias %%CERTS_DIR%%/ca.crt;
