@@ -264,6 +264,7 @@ fi
 if [ ! -e "$SRC_DIR/node_modules/agent-browser" ]; then
     mkdir -p "$SRC_DIR/node_modules"
     ln -snf /usr/lib/node_modules/agent-browser "$SRC_DIR/node_modules/agent-browser"
+    cd "$SRC_DIR" && npm audit fix --silent 2>/dev/null || true
     echo "[run] Linked agent-browser into project"
 fi
 
