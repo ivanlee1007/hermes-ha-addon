@@ -28,17 +28,19 @@
 
 Addon-level options are configured in the Home Assistant UI (Settings > Apps > Hermes Agent > Configuration):
 
-| Option                | Default                                            | Description                                                                     |
-| --------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `git_url`             | `https://github.com/NousResearch/hermes-agent.git` | Git repository URL (clear to reset to default)                                  |
-| `git_ref`             |                                                    | Branch, tag, or commit (empty = repo's default branch)                          |
-| `git_token`           |                                                    | Token for private repos + exported as `GITHUB_TOKEN` for gh CLI                 |
-| `auto_update`         | `false`                                            | Pull latest changes on restart (preserves local modifications)                  |
-| `hass_url`            | `http://homeassistant.local:8123`                  | Home Assistant URL for API access                                               |
-| `homeassistant_token` |                                                    | Long-lived access token for Home Assistant API integration                      |
-| `hermes_home`         | `.hermes`                                          | Agent profile directory (relative to ~). Change to switch profiles (e.g. "amy") |
-| `prefer_ipv4_dns`     | `true`                                             | Prioritize IPv4 over IPv6 for DNS resolution                                    |
-| `env_vars`            | `[]`                                               | Additional environment variables (API keys, etc.)                               |
+| Option                | Default                                            | Description                                                                         |
+| --------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `git_url`             | `https://github.com/NousResearch/hermes-agent.git` | Git repository URL (clear to reset to default)                                      |
+| `git_ref`             |                                                    | Branch, tag, or commit (empty = repo's default branch)                              |
+| `git_token`           |                                                    | Token for private repos + exported as `GITHUB_TOKEN` for gh CLI                     |
+| `auto_update`         | `false`                                            | Pull latest changes on restart (preserves local modifications)                      |
+| `hass_url`            | `http://homeassistant.local:8123`                  | Home Assistant URL for API access                                                   |
+| `homeassistant_token` |                                                    | Long-lived access token for Home Assistant API integration                          |
+| `hermes_home`         | `.hermes`                                          | Agent profile directory (relative to ~). Change to switch profiles (e.g. "amy")     |
+| `prefer_ipv4_dns`     | `true`                                             | Prioritize IPv4 over IPv6 for DNS resolution                                        |
+| `env_vars`            | `OPENROUTER_API_KEY` (example)                     | Environment variables (API keys, etc.) — non-empty values override `~/.hermes/.env` |
+
+API keys can be configured in two places: `env_vars` above (convenient, via Home Assistant UI) or `~/.hermes/.env` (full list, via terminal or `hermes setup`). `env_vars` takes precedence over `.env` when both are set.
 
 Hermes-internal configuration (model, platforms, memory, tools) is managed via the terminal:
 

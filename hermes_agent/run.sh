@@ -106,21 +106,6 @@ if [ -d "$BREW_DIR/bin" ]; then
 fi
 
 # ── Section 4: Shell environment ─────────────────────────────────────
-# ~/.hermes_profile: env vars + PATH (regenerated every start, dynamic from config)
-cat > /config/.hermes_profile << ENVSH
-export HERMES_HOME="$HERMES_HOME"
-export GOPATH="$GO_DIR"
-export GOBIN="$GO_DIR/bin"
-export NPM_CONFIG_PREFIX="$NODE_DIR"
-export PATH="$VENV_DIR/bin:$BREW_DIR/sbin:$BREW_DIR/bin:$GO_DIR/bin:/usr/local/go/bin:$NODE_DIR/bin:\$PATH"
-$([ -n "$HASS_TOKEN" ] && echo "export HASS_TOKEN=\"$HASS_TOKEN\"")
-$([ -n "$HASS_URL" ] && echo "export HASS_URL=\"$HASS_URL\"")
-$([ -n "$GIT_TOKEN" ] && echo "export GITHUB_TOKEN=\"$GIT_TOKEN\"")
-export API_SERVER_ENABLED=true
-export API_SERVER_PORT=8642
-export API_SERVER_HOST=127.0.0.1
-ENVSH
-
 # ~/.bashrc: persistent, create-if-missing (user-editable)
 if [ ! -f /config/.bashrc ]; then
     cat > /config/.bashrc << 'BASHRC'
@@ -340,7 +325,15 @@ TMUX
 fi
 
 # ── Section 7: Environment variable passthrough ──────────────────────
-# Only reserve vars controlled by dedicated config options (avoid conflicts)
+# Source .env first (base config from hermes setup)
+if [ -f "$HERMES_HOME/.env" ]; then
+    set -a
+    # shellcheck disable=SC1091
+    source "$HERMES_HOME/.env"
+    set +a
+fi
+
+# HA addon config env_vars override .env (non-empty values only)
 RESERVED_VARS="HERMES_HOME|HASS_TOKEN|HASS_URL|GITHUB_TOKEN"
 
 ENV_COUNT=$(jq '.env_vars | length' "$OPTIONS_FILE" 2>/dev/null || echo 0)
@@ -377,13 +370,25 @@ export API_SERVER_ENABLED=true
 export API_SERVER_PORT=8642
 export API_SERVER_HOST=127.0.0.1
 
-# Source .env for the agent
-if [ -f "$HERMES_HOME/.env" ]; then
-    set -a
-    # shellcheck disable=SC1091
-    source "$HERMES_HOME/.env"
-    set +a
-fi
+# ~/.hermes_profile: regenerated every start with all env vars (for SSH/docker-exec sessions)
+cat > /config/.hermes_profile << ENVSH
+export HERMES_HOME="$HERMES_HOME"
+export GOPATH="$GO_DIR"
+export GOBIN="$GO_DIR/bin"
+export NPM_CONFIG_PREFIX="$NODE_DIR"
+export HOMEBREW_PREFIX="$BREW_DIR"
+export HOMEBREW_CELLAR="$BREW_DIR/Cellar"
+export HOMEBREW_REPOSITORY="$BREW_DIR/Homebrew"
+export HERMES_VERSION="$HERMES_VERSION"
+export PATH="$VENV_DIR/bin:$BREW_DIR/sbin:$BREW_DIR/bin:$GO_DIR/bin:/usr/local/go/bin:$NODE_DIR/bin:\$PATH"
+$([ -n "$HASS_TOKEN" ] && echo "export HASS_TOKEN=\"$HASS_TOKEN\"")
+$([ -n "$HASS_URL" ] && echo "export HASS_URL=\"$HASS_URL\"")
+$([ -n "$GIT_TOKEN" ] && echo "export GITHUB_TOKEN=\"$GIT_TOKEN\"")
+$(jq -r '.env_vars[]? | select(.value != "") | "export \(.name)=\(.value | @sh)"' "$OPTIONS_FILE" 2>/dev/null)
+export API_SERVER_ENABLED=true
+export API_SERVER_PORT=8642
+export API_SERVER_HOST=127.0.0.1
+ENVSH
 
 # ── Section 8: TLS certificates ──────────────────────────────────────
 if [ ! -f "$CERTS_DIR/server.crt" ]; then
