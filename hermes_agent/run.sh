@@ -198,7 +198,8 @@ MARKER_FILE="$HOME/.hermes_install"
 compute_marker() {
     local ref="${GIT_REF:-$(cd "$SRC_DIR" 2>/dev/null && git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)}"
     local hash="$(cd "$SRC_DIR" 2>/dev/null && git rev-parse HEAD 2>/dev/null || echo none)"
-    echo "${GIT_URL}|${ref}|${hash}"
+    local subs="$(ls -d "$SRC_DIR"/*/pyproject.toml 2>/dev/null | xargs -I{} dirname {} | xargs -n1 basename | sort | paste -sd,)"
+    echo "${GIT_URL}|${ref}|${hash}|${subs}"
 }
 
 install_needed() {
