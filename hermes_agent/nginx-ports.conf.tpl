@@ -6,6 +6,7 @@
         %%AUTH_BASIC_ON%%
 
         location = / {
+            %%AUTH_BASIC_OFF%%
             root /var/www;
             try_files /landing.html =404;
         }
@@ -52,6 +53,7 @@
         # API_END
 
         location = /cert/ca.crt {
+            %%AUTH_BASIC_OFF%%
             alias %%CERTS_DIR%%/ca.crt;
             default_type application/x-x509-ca-cert;
             add_header Content-Disposition 'attachment; filename="hermes-agent-ca.crt"';
@@ -78,6 +80,7 @@
         %%AUTH_BASIC_ON%%
 
         location = / {
+            %%AUTH_BASIC_OFF%%
             root /var/www;
             try_files /landing.html =404;
         }
@@ -127,6 +130,7 @@
         # API_END
 
         location = /cert/ca.crt {
+            %%AUTH_BASIC_OFF%%
             alias %%CERTS_DIR%%/ca.crt;
             default_type application/x-x509-ca-cert;
             add_header Content-Disposition 'attachment; filename="hermes-agent-ca.crt"';
