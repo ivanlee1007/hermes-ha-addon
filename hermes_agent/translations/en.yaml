@@ -25,12 +25,12 @@ configuration:
   enable_terminal:
     name: Enable Web Terminal
     description: >-
-      ⚠️ Enable web terminal on direct HTTP/HTTPS ports.
+      ⚠️ Enable web terminal on direct HTTP/HTTPS ports (configured under Network below).
       Set an access password to secure these ports.
   enable_api:
     name: Enable API Server
     description: >-
-      ⚠️ Enable the OpenAI-compatible API server on direct HTTP/HTTPS ports.
+      ⚠️ Enable the OpenAI-compatible API server on direct HTTP/HTTPS ports (configured under Network below).
       The access password doubles as the server API key.
   access_password:
     name: Access Password
