@@ -65,7 +65,7 @@ Direct HTTP/HTTPS access requires `enable_terminal` (**Enable Web Terminal**) an
 
 | URL                                            | Description                                                              |
 | ---------------------------------------------- | ------------------------------------------------------------------------ |
-| `https://homeassistant.local:8443/hermes/`     | Hermes Agent (login shell -- starts hermes, crash drops to shell)        |
+| `https://homeassistant.local:8443/hermes/`     | Hermes Agent (starts hermes, crash drops to shell)                       |
 | `https://homeassistant.local:8443/terminal/`   | Shell terminal (non-login shell -- plain shell, hermes not auto-started) |
 | `https://homeassistant.local:8443/cert/ca.crt` | CA certificate download (for trusting self-signed HTTPS)                 |
 
@@ -102,7 +102,7 @@ Via Home Assistant host + docker exec, no SSH server in container required. Port
 ssh -p 22222 -t root@homeassistant.local "docker exec -it \$(docker ps -qf name=hermes_agent) bash"
 
 # Hermes (shared tmux session — same as Home Assistant sidebar "Hermes" tab)
-ssh -p 22222 -t root@homeassistant.local "docker exec -it \$(docker ps -qf name=hermes_agent) tmux -u new -A -s hermes bash -l"
+ssh -p 22222 -t root@homeassistant.local "docker exec -it \$(docker ps -qf name=hermes_agent) tmux -u new -A -s hermes /usr/local/bin/start-hermes"
 
 # Terminal (shared tmux session — same as Home Assistant sidebar "Terminal" tab)
 ssh -p 22222 -t root@homeassistant.local "docker exec -it \$(docker ps -qf name=hermes_agent) tmux -u new -A -s terminal bash"
