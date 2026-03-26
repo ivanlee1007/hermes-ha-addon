@@ -9,6 +9,7 @@
             %%AUTH_BASIC_OFF%%
             root /var/www;
             try_files /landing.html =404;
+            add_header Cache-Control "no-cache";
         }
 
         # TERMINAL_START
@@ -83,6 +84,7 @@
             %%AUTH_BASIC_OFF%%
             root /var/www;
             try_files /landing.html =404;
+            add_header Cache-Control "no-cache";
         }
 
         # TERMINAL_START
