@@ -187,7 +187,7 @@ The Hermes tab uses a dedicated `start-hermes` wrapper (sources .bashrc, starts 
 
 Pre-installed at build time:
 
-- **Languages**: Go 1.22, Node.js 22, Python 3.11
+- **Languages**: Go 1.26, Node.js 22, Python 3.11
 - **Browser**: Chromium, agent-browser
 - **Dev tools**: bat, bc, fd-find, gh (GitHub CLI), git, htop, jq, moreutils, nano, ripgrep, tree, vim, yq
 - **Graphics**: ghostscript, imagemagick

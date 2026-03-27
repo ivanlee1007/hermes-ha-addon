@@ -47,9 +47,9 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
     && apt-get update && apt-get install -y --no-install-recommends gh \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Go 1.22 ─────────────────────────────────────────────────────────
+# ── Go 1.26 ─────────────────────────────────────────────────────────
 RUN ARCH=$(dpkg --print-architecture) \
-    && curl -fsSL "https://go.dev/dl/go1.22.10.linux-${ARCH}.tar.gz" \
+    && curl -fsSL "https://go.dev/dl/go1.26.1.linux-${ARCH}.tar.gz" \
         | tar -C /usr/local -xz
 ENV PATH="/usr/local/go/bin:${PATH}"
 
