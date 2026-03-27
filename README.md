@@ -176,7 +176,7 @@ The Hermes tab uses a dedicated `start-hermes` wrapper (sources .bashrc, starts 
 ├── .bashrc                # Shell config
 ├── .hermes_install        # Install marker
 ├── .hermes_profile        # Env vars + PATH (regenerated)
-├── .profile               # Login shell config (starts hermes)
+├── .profile               # Sources .bashrc (login shell init)
 └── .tmux.conf             # tmux config
 
 /media/                    # Home Assistant media directory (shared, visible in Home Assistant media browser)
