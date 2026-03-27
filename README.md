@@ -142,13 +142,13 @@ Three services in a Debian Bookworm container:
 
 ### Shell Environment
 
-Login shells start Hermes automatically. Non-login shells provide a plain shell with all paths configured.
+The Hermes tab uses a dedicated `start-hermes` wrapper (sources .bashrc, starts hermes, fallback shell on error). The Terminal tab provides a plain shell with all paths configured.
 
 | File                | Persistent? | Purpose                                         |
 | ------------------- | ----------- | ----------------------------------------------- |
 | `~/.bashrc`         | Yes         | Sources .hermes_profile + .env, prompt, aliases |
 | `~/.hermes_profile` | Regenerated | Env vars, PATH, tokens (from add-on config)     |
-| `~/.profile`        | Yes         | Sources .bashrc, starts hermes (login shells)   |
+| `~/.profile`        | Yes         | Sources .bashrc (login shell init)              |
 | `~/.tmux.conf`      | Yes         | Terminal config (mouse scroll, history)         |
 
 ### Persistent Storage
