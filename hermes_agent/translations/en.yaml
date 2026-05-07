@@ -3,10 +3,11 @@ configuration:
     name: Git Repository URL
     description: Hermes Agent git repository URL.
   git_ref:
-    name: Git Branch/Tag
+    name: Git Branch/Tag/Commit
     description: >-
       Branch, tag, or commit hash to check out.
-      Leave empty for the repository's default branch.
+      This add-on release defaults to a tested Hermes Agent commit;
+      override it only if you want a different branch/tag/commit.
   git_token:
     name: Git/GitHub Token
     description: >-
@@ -15,7 +16,8 @@ configuration:
   auto_update:
     name: Auto Update
     description: >-
-      Pull latest changes from git on every restart.
+      Pull latest changes from git on every restart when git_ref is empty.
+      A configured git_ref is treated as the pinned target instead.
   hass_url:
     name: Home Assistant URL
     description: Home Assistant base URL for API access.

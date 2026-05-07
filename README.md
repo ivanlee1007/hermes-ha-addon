@@ -34,9 +34,9 @@ Add-on-level options are configured in the Home Assistant UI (Settings > Apps > 
 | Option                | Default                                            | Description                                                                     |
 | --------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------- |
 | `git_url`             | `https://github.com/NousResearch/hermes-agent.git` | Git repository URL (clear to reset to default)                                  |
-| `git_ref`             |                                                    | Branch, tag, or commit (empty = repo's default branch)                          |
+| `git_ref`             | `69d025e4a744c8e5968e9aab0c1a8679299840a5`        | Branch, tag, or commit (pinned to a tested Hermes Agent commit by default)       |
 | `git_token`           |                                                    | Token for private repos + exported as `GITHUB_TOKEN` for gh CLI                 |
-| `auto_update`         | `false`                                            | Pull latest changes on restart (preserves local modifications)                  |
+| `auto_update`         | `false`                                            | Pull latest changes on restart when `git_ref` is empty                          |
 | `hass_url`            | `http://homeassistant.local:8123`                  | Home Assistant URL for API access                                               |
 | `homeassistant_token` |                                                    | Long-lived access token for Home Assistant API integration                      |
 | `enable_dashboard`    | `false`                                            | Enable web dashboard on direct HTTP/HTTPS ports                                 |
@@ -49,6 +49,8 @@ Add-on-level options are configured in the Home Assistant UI (Settings > Apps > 
 API keys can be configured in two places: `env_vars` above (convenient, via Home Assistant UI) or `~/.hermes/.env` directly (full list, via terminal or `hermes setup`). Non-empty `env_vars` are written to `.env` on each start, overriding existing entries.
 
 **Note:** Values added via `env_vars` are not removed or reset from `.env` when cleared or removed in the Home Assistant UI -- edit `~/.hermes/.env` directly to remove them.
+
+**Hermes Agent version:** This add-on release pins `git_ref` to Hermes Agent commit `69d025e4a744c8e5968e9aab0c1a8679299840a5` (upstream `NousResearch/hermes-agent` `main` as of 2026-05-07). Existing persistent checkouts are updated when the configured/default ref changes; set `git_ref` yourself if you want to stay on a different branch/tag/commit.
 
 Hermes-internal configuration (model, platforms, memory, tools) is managed via the terminal:
 

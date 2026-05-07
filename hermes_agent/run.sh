@@ -219,31 +219,63 @@ activate_venv() {
     source "$VENV_DIR/bin/activate"
 }
 
+clone_url() {
+    local url="$GIT_URL"
+    if [ -n "$GIT_TOKEN" ]; then
+        url=$(echo "$GIT_URL" | sed "s|https://|https://${GIT_TOKEN}@|")
+    fi
+    echo "$url"
+}
+
+checkout_configured_ref() {
+    if [ -z "$GIT_REF" ]; then
+        return 0
+    fi
+    cd "$SRC_DIR"
+    local current_ref target_ref
+    current_ref=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+    target_ref=$(git rev-parse --verify "$GIT_REF^{commit}" 2>/dev/null || echo "")
+    if [ -z "$target_ref" ]; then
+        echo "[run] Fetching configured Hermes ref: $GIT_REF"
+        git fetch --depth 1 origin "$GIT_REF" || git fetch origin "$GIT_REF" || true
+        target_ref=$(git rev-parse --verify "FETCH_HEAD^{commit}" 2>/dev/null || \
+                     git rev-parse --verify "$GIT_REF^{commit}" 2>/dev/null || echo "")
+    fi
+    if [ -n "$target_ref" ] && [ "$current_ref" != "$target_ref" ]; then
+        echo "[run] Updating Hermes Agent checkout to configured ref: $GIT_REF"
+        git stash --quiet 2>/dev/null || true
+        git checkout --detach "$target_ref"
+        git submodule update --init --recursive 2>/dev/null || true
+        git stash pop --quiet 2>/dev/null || true
+    elif [ -z "$target_ref" ]; then
+        echo "[run] Warning: could not resolve configured Hermes ref: $GIT_REF"
+    fi
+}
+
 # Clone if missing
 if [ ! -d "$SRC_DIR/.git" ]; then
     echo "[run] Cloning Hermes Agent..."
-    CLONE_URL="$GIT_URL"
-    if [ -n "$GIT_TOKEN" ]; then
-        CLONE_URL=$(echo "$GIT_URL" | sed "s|https://|https://${GIT_TOKEN}@|")
-    fi
-    CLONE_ARGS=()
-    if [ -n "$GIT_REF" ]; then
-        CLONE_ARGS+=(--branch "$GIT_REF")
-    fi
-    git clone "${CLONE_ARGS[@]}" "$CLONE_URL" "$SRC_DIR"
+    git clone "$(clone_url)" "$SRC_DIR"
+    checkout_configured_ref
     cd "$SRC_DIR"
     git submodule update --init --recursive 2>/dev/null || true
     echo "[run] Clone complete: $(git log --oneline -1)"
 fi
 
-# Auto-update (stash local changes, pull, restore)
-if [ "$AUTO_UPDATE" = "true" ] && [ -d "$SRC_DIR/.git" ]; then
-    echo "[run] Pulling latest changes..."
+# Update existing checkout when requested, or when a pinned ref is configured.
+# HERMES_HOME is persistent across add-on upgrades; without this, changing the
+# default git_ref in config.yaml would not move an already-installed checkout.
+if [ -d "$SRC_DIR/.git" ]; then
     cd "$SRC_DIR"
-    git stash --quiet 2>/dev/null || true
-    git pull --ff-only 2>/dev/null || echo "[run] Warning: git pull failed (branch may have diverged)"
-    git stash pop --quiet 2>/dev/null || true
-    git submodule update --init --recursive 2>/dev/null || true
+    if [ -n "$GIT_REF" ]; then
+        checkout_configured_ref
+    elif [ "$AUTO_UPDATE" = "true" ]; then
+        echo "[run] Pulling latest Hermes Agent changes..."
+        git stash --quiet 2>/dev/null || true
+        git pull --ff-only 2>/dev/null || echo "[run] Warning: git pull failed (branch may have diverged)"
+        git stash pop --quiet 2>/dev/null || true
+        git submodule update --init --recursive 2>/dev/null || true
+    fi
 fi
 
 # Editable install
