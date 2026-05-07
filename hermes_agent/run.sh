@@ -22,6 +22,9 @@ HASS_URL=$(opt hass_url)
 HASS_TOKEN=$(opt homeassistant_token)
 HERMES_HOME_DIR=$(opt hermes_home)
 ENABLE_DASHBOARD=$(opt_bool enable_dashboard)
+ENABLE_WEBUI=$(opt_bool enable_webui)
+WEBUI_GIT_URL=$(opt webui_git_url)
+WEBUI_GIT_REF=$(opt webui_git_ref)
 ENABLE_TERMINAL=$(opt_bool enable_terminal)
 ENABLE_API=$(opt_bool enable_api)
 ACCESS_PASSWORD=$(opt access_password)
@@ -50,6 +53,8 @@ echo "[run] HERMES_HOME: $HERMES_HOME"
 # ── Section 3: Persistent storage setup ──────────────────────────────
 SRC_DIR="$HERMES_HOME/hermes-agent"
 VENV_DIR="$SRC_DIR/venv"
+WEBUI_DIR="$HERMES_HOME/hermes-webui"
+WEBUI_STATE_DIR="$HERMES_HOME/webui"
 BREW_DIR="$HOME/.linuxbrew"
 NODE_DIR="$HOME/.npm-global"
 GO_DIR="$HOME/.go"
@@ -58,6 +63,7 @@ INGRESS_PORT=49169
 TTYD_HERMES_PORT=49269
 TTYD_TERMINAL_PORT=49369
 DASHBOARD_PORT=49469
+WEBUI_PORT=49569
 HTTP_PORT=8080
 HTTPS_PORT=8443
 
@@ -219,43 +225,51 @@ activate_venv() {
     source "$VENV_DIR/bin/activate"
 }
 
-clone_url() {
-    local url="$GIT_URL"
-    if [ -n "$GIT_TOKEN" ]; then
-        url=$(echo "$GIT_URL" | sed "s|https://|https://${GIT_TOKEN}@|")
+repo_url() {
+    local url="$1"
+    local token="${2:-}"
+    if [ -n "$token" ]; then
+        url=$(echo "$url" | sed "s|https://|https://${token}@|")
     fi
     echo "$url"
 }
 
-checkout_configured_ref() {
-    if [ -z "$GIT_REF" ]; then
+checkout_ref() {
+    local repo_dir="$1"
+    local ref="$2"
+    local label="$3"
+    if [ -z "$ref" ]; then
         return 0
     fi
-    cd "$SRC_DIR"
+    cd "$repo_dir"
     local current_ref target_ref
     current_ref=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
-    target_ref=$(git rev-parse --verify "$GIT_REF^{commit}" 2>/dev/null || echo "")
+    target_ref=$(git rev-parse --verify "$ref^{commit}" 2>/dev/null || echo "")
     if [ -z "$target_ref" ]; then
-        echo "[run] Fetching configured Hermes ref: $GIT_REF"
-        git fetch --depth 1 origin "$GIT_REF" || git fetch origin "$GIT_REF" || true
+        echo "[run] Fetching configured ${label} ref: $ref"
+        git fetch --depth 1 origin "$ref" || git fetch origin "$ref" || true
         target_ref=$(git rev-parse --verify "FETCH_HEAD^{commit}" 2>/dev/null || \
-                     git rev-parse --verify "$GIT_REF^{commit}" 2>/dev/null || echo "")
+                     git rev-parse --verify "$ref^{commit}" 2>/dev/null || echo "")
     fi
     if [ -n "$target_ref" ] && [ "$current_ref" != "$target_ref" ]; then
-        echo "[run] Updating Hermes Agent checkout to configured ref: $GIT_REF"
+        echo "[run] Updating ${label} checkout to configured ref: $ref"
         git stash --quiet 2>/dev/null || true
         git checkout --detach "$target_ref"
         git submodule update --init --recursive 2>/dev/null || true
         git stash pop --quiet 2>/dev/null || true
     elif [ -z "$target_ref" ]; then
-        echo "[run] Warning: could not resolve configured Hermes ref: $GIT_REF"
+        echo "[run] Warning: could not resolve configured ${label} ref: $ref"
     fi
+}
+
+checkout_configured_ref() {
+    checkout_ref "$SRC_DIR" "$GIT_REF" "Hermes Agent"
 }
 
 # Clone if missing
 if [ ! -d "$SRC_DIR/.git" ]; then
     echo "[run] Cloning Hermes Agent..."
-    git clone "$(clone_url)" "$SRC_DIR"
+    git clone "$(repo_url "$GIT_URL" "$GIT_TOKEN")" "$SRC_DIR"
     checkout_configured_ref
     cd "$SRC_DIR"
     git submodule update --init --recursive 2>/dev/null || true
@@ -303,6 +317,25 @@ if [ ! -e "$SRC_DIR/node_modules/agent-browser" ]; then
     ln -snf /usr/lib/node_modules/agent-browser "$SRC_DIR/node_modules/agent-browser"
     cd "$SRC_DIR" && npm audit fix --silent 2>/dev/null || true
     echo "[run] Linked agent-browser into project"
+fi
+
+# ── Section 5b: Hermes WebUI installation ────────────────────────────
+WEBUI_AVAILABLE="false"
+if [ "$ENABLE_WEBUI" = "true" ]; then
+    mkdir -p "$WEBUI_STATE_DIR"
+    if [ ! -d "$WEBUI_DIR/.git" ]; then
+        echo "[run] Cloning Hermes WebUI..."
+        git clone "$(repo_url "${WEBUI_GIT_URL:-https://github.com/nesquena/hermes-webui.git}" "$GIT_TOKEN")" "$WEBUI_DIR"
+    fi
+    if [ -d "$WEBUI_DIR/.git" ]; then
+        checkout_ref "$WEBUI_DIR" "$WEBUI_GIT_REF" "Hermes WebUI"
+        if [ -f "$WEBUI_DIR/requirements.txt" ]; then
+            echo "[run] Installing Hermes WebUI requirements into Hermes venv..."
+            uv pip install -r "$WEBUI_DIR/requirements.txt" 2>&1 | tail -5
+        fi
+        WEBUI_AVAILABLE="true"
+        echo "[run] Hermes WebUI available: $(cd "$WEBUI_DIR" && git log --oneline -1)"
+    fi
 fi
 
 # Build dashboard web frontend
@@ -557,7 +590,7 @@ else
 fi
 
 # Render ports config if any direct-port service enabled
-if [ "$ENABLE_DASHBOARD" = "true" ] || [ "$ENABLE_TERMINAL" = "true" ] || [ "$ENABLE_API" = "true" ]; then
+if [ "$ENABLE_DASHBOARD" = "true" ] || [ "$ENABLE_WEBUI" = "true" ] || [ "$ENABLE_TERMINAL" = "true" ] || [ "$ENABLE_API" = "true" ]; then
     cp /etc/nginx/nginx-ports.conf.tpl /etc/nginx/ports.conf
     sed -i \
         -e "s|%%HTTP_PORT%%|${HTTP_PORT}|g" \
@@ -565,6 +598,7 @@ if [ "$ENABLE_DASHBOARD" = "true" ] || [ "$ENABLE_TERMINAL" = "true" ] || [ "$EN
         -e "s|%%TTYD_TERMINAL_PORT%%|${TTYD_TERMINAL_PORT}|g" \
         -e "s|%%TTYD_HERMES_PORT%%|${TTYD_HERMES_PORT}|g" \
         -e "s|%%DASHBOARD_PORT%%|${DASHBOARD_PORT}|g" \
+        -e "s|%%WEBUI_PORT%%|${WEBUI_PORT}|g" \
         -e "s|%%CERTS_DIR%%|${CERTS_DIR}|g" \
         -e "s|%%AUTH_BASIC_ON%%|${AUTH_BASIC_ON}|g" \
         -e "s|%%AUTH_BASIC_OFF%%|${AUTH_BASIC_OFF}|g" \
@@ -585,6 +619,12 @@ if [ "$ENABLE_DASHBOARD" = "true" ] || [ "$ENABLE_TERMINAL" = "true" ] || [ "$EN
     else
         echo "[run] Web dashboard: enabled on direct ports"
     fi
+    if [ "$WEBUI_AVAILABLE" != "true" ]; then
+        sed -i '/# WEBUI_START/,/# WEBUI_END/d' /etc/nginx/ports.conf
+        echo "[run] Hermes WebUI: disabled on direct ports"
+    else
+        echo "[run] Hermes WebUI: enabled on direct ports"
+    fi
     INCLUDE_PORTS="include /etc/nginx/ports.conf;"
     echo "[run] Direct ports: enabled (HTTP: $HTTP_PORT, HTTPS: $HTTPS_PORT)"
 else
@@ -598,14 +638,18 @@ sed -i \
     -e "s|%%TTYD_TERMINAL_PORT%%|${TTYD_TERMINAL_PORT}|g" \
     -e "s|%%TTYD_HERMES_PORT%%|${TTYD_HERMES_PORT}|g" \
     -e "s|%%DASHBOARD_PORT%%|${DASHBOARD_PORT}|g" \
+    -e "s|%%WEBUI_PORT%%|${WEBUI_PORT}|g" \
     -e "s|%%CERTS_DIR%%|${CERTS_DIR}|g" \
     -e "s|%%HERMES_VERSION%%|${HERMES_VERSION}|g" \
     -e "s|%%INCLUDE_PORTS%%|${INCLUDE_PORTS}|g" \
     /etc/nginx/nginx.conf
 
-# Strip dashboard from ingress if module not available
+# Strip dashboard/WebUI from ingress if not available
 if [ "$DASHBOARD_AVAILABLE" != "true" ]; then
     sed -i '/# DASHBOARD_START/,/# DASHBOARD_END/d' /etc/nginx/nginx.conf
+fi
+if [ "$WEBUI_AVAILABLE" != "true" ]; then
+    sed -i '/# WEBUI_START/,/# WEBUI_END/d' /etc/nginx/nginx.conf
 fi
 
 # Render landing page
@@ -619,6 +663,11 @@ SHOW_DASHBOARD_PORTS="false"
 if [ "$ENABLE_DASHBOARD" = "true" ] && [ "$DASHBOARD_AVAILABLE" = "true" ]; then
     SHOW_DASHBOARD_PORTS="true"
 fi
+SHOW_WEBUI="$WEBUI_AVAILABLE"
+SHOW_WEBUI_PORTS="false"
+if [ "$WEBUI_AVAILABLE" = "true" ] && { [ "$ENABLE_DASHBOARD" = "true" ] || [ "$ENABLE_WEBUI" = "true" ] || [ "$ENABLE_TERMINAL" = "true" ] || [ "$ENABLE_API" = "true" ]; }; then
+    SHOW_WEBUI_PORTS="true"
+fi
 cp /var/www/landing.html.tpl /var/www/landing.html
 sed -i \
     -e "s|%%HERMES_VERSION%%|${HERMES_VERSION}|g" \
@@ -626,6 +675,8 @@ sed -i \
     -e "s|%%SHOW_TERMINAL%%|${SHOW_TERMINAL}|g" \
     -e "s|%%SHOW_DASHBOARD%%|${SHOW_DASHBOARD}|g" \
     -e "s|%%SHOW_DASHBOARD_PORTS%%|${SHOW_DASHBOARD_PORTS}|g" \
+    -e "s|%%SHOW_WEBUI%%|${SHOW_WEBUI}|g" \
+    -e "s|%%SHOW_WEBUI_PORTS%%|${SHOW_WEBUI_PORTS}|g" \
     /var/www/landing.html
 
 echo "[run] Nginx configured (ingress: $INGRESS_PORT, HTTP: $HTTP_PORT, HTTPS: $HTTPS_PORT)"
@@ -635,6 +686,7 @@ GATEWAY_PID=""
 TTYD_TERMINAL_PID=""
 TTYD_HERMES_PID=""
 DASHBOARD_PID=""
+WEBUI_PID=""
 DASHBOARD_TOKEN=""
 
 start_gateway() {
@@ -694,6 +746,31 @@ start_dashboard() {
     echo "[run] Dashboard started (PID: $DASHBOARD_PID)"
 }
 
+start_webui() {
+    if [ "$WEBUI_AVAILABLE" != "true" ]; then
+        echo "[run] Hermes WebUI: disabled or not available"
+        return
+    fi
+    echo "[run] Starting Hermes WebUI (port: $WEBUI_PORT)..."
+    mkdir -p "$WEBUI_STATE_DIR" "$HERMES_HOME/logs"
+    cd "$WEBUI_DIR"
+    local webui_pythonpath="$WEBUI_DIR${PYTHONPATH:+:$PYTHONPATH}"
+    PYTHONPATH="$webui_pythonpath" \
+    HERMES_WEBUI_AGENT_DIR="$SRC_DIR" \
+    HERMES_WEBUI_PYTHON="$VENV_DIR/bin/python" \
+    HERMES_WEBUI_HOST="127.0.0.1" \
+    HERMES_WEBUI_PORT="$WEBUI_PORT" \
+    HERMES_WEBUI_STATE_DIR="$WEBUI_STATE_DIR" \
+    HERMES_SKIP_CHMOD=1 \
+    HERMES_WEBUI_DEFAULT_WORKSPACE="$HOME" \
+    HERMES_WEBUI_FOREGROUND=1 \
+    HERMES_WEBUI_SKIP_ONBOARDING=1 \
+    "$VENV_DIR/bin/python" "$WEBUI_DIR/bootstrap.py" --foreground --no-browser --host 127.0.0.1 "$WEBUI_PORT" \
+        >> "$HERMES_HOME/logs/webui.log" 2>&1 &
+    WEBUI_PID=$!
+    echo "[run] Hermes WebUI started (PID: $WEBUI_PID)"
+}
+
 # Read the dashboard's ephemeral session token and inject it into nginx config.
 # The dashboard generates a random token on each start and embeds it in index.html.
 # nginx auth_basic and HA Ingress both consume/strip the Authorization header,
@@ -734,6 +811,7 @@ trap shutdown SIGTERM SIGINT
 start_gateway
 start_ttyd
 start_dashboard
+start_webui
 inject_dashboard_token
 
 # Inject the dashboard token into the already-rendered nginx configs
@@ -761,6 +839,7 @@ echo " ${HERMES_VERSION}"
 echo " Gateway PID: ${GATEWAY_PID}"
 echo " Hermes:      ${BASE_URL}/hermes/"
 [ "$DASHBOARD_AVAILABLE" = "true" ] && echo " Dashboard:   ${BASE_URL}/dashboard/"
+[ "$WEBUI_AVAILABLE" = "true" ] && echo " WebUI:       ${BASE_URL}/webui/"
 echo " Terminal:    ${BASE_URL}/terminal/"
 echo " API:         ${BASE_URL}/v1/"
 echo "─────────────────────────────────────────────"
@@ -772,12 +851,12 @@ shutdown() {
     # Reverse order: nginx -> ttyd -> gateway
     nginx -s quit 2>/dev/null || true
     echo "[run] nginx stopped"
-    for pid in "$TTYD_TERMINAL_PID" "$TTYD_HERMES_PID" "$DASHBOARD_PID"; do
+    for pid in "$TTYD_TERMINAL_PID" "$TTYD_HERMES_PID" "$DASHBOARD_PID" "$WEBUI_PID"; do
         if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
             kill "$pid" 2>/dev/null
         fi
     done
-    echo "[run] ttyd + dashboard stopped"
+    echo "[run] ttyd + dashboard + WebUI stopped"
     if [ -n "$GATEWAY_PID" ] && kill -0 "$GATEWAY_PID" 2>/dev/null; then
         kill -TERM "$GATEWAY_PID" 2>/dev/null
         local waited=0
@@ -807,6 +886,11 @@ while true; do
         fi
         sleep 3
         start_gateway
+    fi
+    if [ "$WEBUI_AVAILABLE" = "true" ] && { [ -z "$WEBUI_PID" ] || ! kill -0 "$WEBUI_PID" 2>/dev/null; }; then
+        echo "[run] Hermes WebUI exited, restarting in 3s..."
+        sleep 3
+        start_webui
     fi
     sleep 5
 done

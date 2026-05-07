@@ -30,6 +30,7 @@
   <div class="buttons">
     <button class="btn active" id="btnHermes" onclick="setMode('hermes')">Hermes</button>
     <button class="btn secondary" id="btnDashboard" onclick="setMode('dashboard')" style="display:none">Dashboard</button>
+    <button class="btn secondary" id="btnWebUI" onclick="setMode('webui')" style="display:none">WebUI</button>
     <button class="btn secondary" id="btnTerminal" onclick="setMode('terminal')">Terminal</button>
     <a class="btn green" href="./cert/ca.crt" download="hermes-agent-ca.crt">CA Cert</a>
     <a class="btn small" id="btnAppInfo" href="/config/app/%%ADDON_SLUG%%/info" target="_top" onclick="document.querySelectorAll('iframe').forEach(function(f){f.remove()})" style="display:none">App Info</a>
@@ -37,6 +38,7 @@
   <div class="status">
     <span id="statusGateway">&#x23F3; Gateway</span>
     <span id="statusDashboard" style="display:none">&#x23F3; Dashboard</span>
+    <span id="statusWebUI" style="display:none">&#x23F3; WebUI</span>
     <span id="statusSecure">&#x1F512;</span>
   </div>
 </div>
@@ -44,6 +46,7 @@
 <div class="term">
   <iframe id="frameHermes" src="./hermes/" title="Hermes Agent"></iframe>
   <iframe id="frameDashboard" src="" title="Dashboard" class="hidden"></iframe>
+  <iframe id="frameWebUI" src="" title="Hermes WebUI" class="hidden"></iframe>
   <iframe id="frameTerminal" src="./terminal/" title="Terminal" class="hidden"></iframe>
   <div id="noServices" class="no-services">These services are available via the Home Assistant sidebar.</div>
 </div>
@@ -52,16 +55,26 @@
 (function() {
   var frameHermes = document.getElementById('frameHermes');
   var frameDashboard = document.getElementById('frameDashboard');
+  var frameWebUI = document.getElementById('frameWebUI');
   var frameTerminal = document.getElementById('frameTerminal');
   var btnHermes = document.getElementById('btnHermes');
   var btnDashboard = document.getElementById('btnDashboard');
+  var btnWebUI = document.getElementById('btnWebUI');
   var btnTerminal = document.getElementById('btnTerminal');
   var current = 'hermes';
   var dashboardLoaded = false;
+  var webuiLoaded = false;
+  var showTerminal = %%SHOW_TERMINAL%%;
+  var showDashboardPorts = %%SHOW_DASHBOARD_PORTS%%;
+  var showWebUIPorts = %%SHOW_WEBUI_PORTS%%;
 
   var showDashboard = %%SHOW_DASHBOARD%%;
+  var showWebUI = %%SHOW_WEBUI%%;
   if (showDashboard) {
     btnDashboard.style.display = '';
+  }
+  if (showWebUI) {
+    btnWebUI.style.display = '';
   }
 
   window.setMode = function(mode) {
@@ -69,13 +82,19 @@
     current = mode;
     frameHermes.className = mode === 'hermes' ? '' : 'hidden';
     frameDashboard.className = mode === 'dashboard' ? '' : 'hidden';
+    frameWebUI.className = mode === 'webui' ? '' : 'hidden';
     frameTerminal.className = mode === 'terminal' ? '' : 'hidden';
     btnHermes.className = mode === 'hermes' ? 'btn active' : 'btn secondary';
     btnDashboard.className = mode === 'dashboard' ? 'btn active' : 'btn secondary';
+    btnWebUI.className = mode === 'webui' ? 'btn active' : 'btn secondary';
     btnTerminal.className = mode === 'terminal' ? 'btn active' : 'btn secondary';
     if (mode === 'dashboard' && !dashboardLoaded) {
       frameDashboard.src = './dashboard/';
       dashboardLoaded = true;
+    }
+    if (mode === 'webui' && !webuiLoaded) {
+      frameWebUI.src = './webui/';
+      webuiLoaded = true;
     }
   };
 
@@ -86,8 +105,6 @@
     document.getElementById('btnAppInfo').style.display = '';
   } else {
     // Direct ports: respect config flags independently
-    var showTerminal = %%SHOW_TERMINAL%%;
-    var showDashboardPorts = %%SHOW_DASHBOARD_PORTS%%;
     if (!showTerminal) {
       btnHermes.style.display = 'none';
       btnTerminal.style.display = 'none';
@@ -98,9 +115,18 @@
     if (!showDashboardPorts) {
       btnDashboard.style.display = 'none';
     }
-    if (!showTerminal && !showDashboardPorts) {
+    if (!showWebUIPorts) {
+      btnWebUI.style.display = 'none';
+      frameWebUI.src = '';
+    }
+    if (!showTerminal && !showDashboardPorts && !showWebUIPorts) {
       document.getElementById('noServices').style.display = 'flex';
     }
+  }
+
+  if (!showTerminal && ((window === window.top) || !showWebUI)) {
+    var initial = showDashboard ? 'dashboard' : (showWebUI ? 'webui' : 'hermes');
+    if (initial !== 'hermes') setMode(initial);
   }
 
   var s = document.getElementById('statusSecure');
@@ -120,6 +146,15 @@
       d.textContent = r.ok ? '\u2705 Dashboard' : '\uD83D\uDCA4 Dashboard';
     }).catch(function() {
       d.textContent = '\uD83D\uDCA4 Dashboard';
+    });
+  }
+  if (showWebUI) {
+    var w = document.getElementById('statusWebUI');
+    w.style.display = '';
+    fetch('./webui/health', {cache:'no-store'}).then(function(r) {
+      w.textContent = r.ok ? '\u2705 WebUI' : '\uD83D\uDCA4 WebUI';
+    }).catch(function() {
+      w.textContent = '\uD83D\uDCA4 WebUI';
     });
   }
 })();

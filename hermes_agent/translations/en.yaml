@@ -29,6 +29,19 @@ configuration:
     description: >-
       ⚠️ Enable web dashboard on direct HTTP/HTTPS ports (configured under Network below).
       Set an access password to secure these ports.
+  enable_webui:
+    name: Enable Hermes WebUI
+    description: >-
+      Enable Hermes WebUI inside the Home Assistant sidebar at /webui/.
+      Direct HTTP/HTTPS access is also available when direct ports are enabled.
+  webui_git_url:
+    name: Hermes WebUI Git Repository URL
+    description: Hermes WebUI git repository URL.
+  webui_git_ref:
+    name: Hermes WebUI Git Branch/Tag/Commit
+    description: >-
+      Branch, tag, or commit hash to check out for Hermes WebUI.
+      This add-on release defaults to a tested Hermes WebUI commit.
   enable_terminal:
     name: Enable Web Terminal
     description: >-

@@ -34,12 +34,15 @@ Add-on-level options are configured in the Home Assistant UI (Settings > Apps > 
 | Option                | Default                                            | Description                                                                     |
 | --------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------- |
 | `git_url`             | `https://github.com/NousResearch/hermes-agent.git` | Git repository URL (clear to reset to default)                                  |
-| `git_ref`             | `69d025e4a744c8e5968e9aab0c1a8679299840a5`        | Branch, tag, or commit (pinned to a tested Hermes Agent commit by default)       |
+| `git_ref`             | `04918345ea31b1106d2ee6d4f42822f4f57616ee`        | Branch, tag, or commit (pinned to a tested Hermes Agent commit by default)       |
 | `git_token`           |                                                    | Token for private repos + exported as `GITHUB_TOKEN` for gh CLI                 |
 | `auto_update`         | `false`                                            | Pull latest changes on restart when `git_ref` is empty                          |
 | `hass_url`            | `http://homeassistant.local:8123`                  | Home Assistant URL for API access                                               |
 | `homeassistant_token` |                                                    | Long-lived access token for Home Assistant API integration                      |
-| `enable_dashboard`    | `false`                                            | Enable web dashboard on direct HTTP/HTTPS ports                                 |
+| `enable_dashboard`    | `false`                                            | Enable Hermes Dashboard on direct HTTP/HTTPS ports                              |
+| `enable_webui`        | `true`                                             | Enable Hermes WebUI at `/webui/`                                                |
+| `webui_git_url`       | `https://github.com/nesquena/hermes-webui.git`     | Hermes WebUI git repository URL                                                 |
+| `webui_git_ref`       | `a8de4e7c0a29750fc9a2e83e2ad8eed324b0467e`        | Hermes WebUI branch, tag, or commit                                             |
 | `enable_terminal`     | `false`                                            | Enable web terminal on direct HTTP/HTTPS ports                                  |
 | `enable_api`          | `false`                                            | Enable the OpenAI-compatible API server on direct HTTP/HTTPS ports              |
 | `access_password`     |                                                    | Password for HTTP/HTTPS access (web terminal). Also used as the server API key  |
@@ -50,7 +53,7 @@ API keys can be configured in two places: `env_vars` above (convenient, via Home
 
 **Note:** Values added via `env_vars` are not removed or reset from `.env` when cleared or removed in the Home Assistant UI -- edit `~/.hermes/.env` directly to remove them.
 
-**Hermes Agent version:** This add-on release pins `git_ref` to Hermes Agent commit `69d025e4a744c8e5968e9aab0c1a8679299840a5` (upstream `NousResearch/hermes-agent` `main` as of 2026-05-07). Existing persistent checkouts are updated when the configured/default ref changes; set `git_ref` yourself if you want to stay on a different branch/tag/commit.
+**Hermes Agent version:** This add-on release pins `git_ref` to Hermes Agent commit `04918345ea31b1106d2ee6d4f42822f4f57616ee` (upstream `NousResearch/hermes-agent` `main` as of 2026-05-07). Existing persistent checkouts are updated when the configured/default ref changes; set `git_ref` yourself if you want to stay on a different branch/tag/commit.
 
 Hermes-internal configuration (model, platforms, memory, tools) is managed via the terminal:
 
@@ -65,14 +68,15 @@ hermes gateway setup  # Configure messaging platforms
 
 The add-on is accessible via the **Home Assistant Sidebar** (landing page with embedded terminal, mode switching, and status display) and, optionally, via direct URLs. Replace `homeassistant.local` with your Home Assistant hostname or IP.
 
-Direct HTTP/HTTPS access requires `enable_dashboard` (**Enable Web Dashboard**), `enable_terminal` (**Enable Web Terminal**), and/or `enable_api` (**Enable API Server**) in the add-on configuration. Set an **Access Password** to secure these ports (username: `hermes`).
+Direct HTTP/HTTPS access requires `enable_dashboard` (**Enable Web Dashboard**), `enable_webui` (**Enable Hermes WebUI**), `enable_terminal` (**Enable Web Terminal**), and/or `enable_api` (**Enable API Server**) in the add-on configuration. Set an **Access Password** to secure these ports (username: `hermes`).
 
 ### Web Terminal & Dashboard
 
 | URL                                            | Description                                                              |
 | ---------------------------------------------- | ------------------------------------------------------------------------ |
 | `https://homeassistant.local:8443/hermes/`     | Hermes Agent (starts hermes, crash drops to shell)                       |
-| `https://homeassistant.local:8443/dashboard/`  | Web dashboard (config, API keys, sessions, analytics, logs)              |
+| `https://homeassistant.local:8443/dashboard/`  | Hermes Dashboard (config, API keys, sessions, analytics, logs)           |
+| `https://homeassistant.local:8443/webui/`      | Hermes WebUI (chat UI, sessions, workspace browser, Control Center)      |
 | `https://homeassistant.local:8443/terminal/`   | Shell terminal (non-login shell -- plain shell, hermes not auto-started) |
 | `https://homeassistant.local:8443/cert/ca.crt` | CA certificate download (for trusting self-signed HTTPS)                 |
 
@@ -157,8 +161,9 @@ Four services in a Debian Bookworm container:
 
 1. **Hermes Gateway** (`hermes gateway run`) -- persistent AI agent daemon with OpenAI-compatible API server and messaging platform connectors. Logs visible in the Home Assistant add-on log and in `~/.hermes/logs/gateway.log`.
 2. **Hermes Dashboard** (`hermes dashboard`) -- browser-based management UI (FastAPI + React) for config, API keys, sessions, analytics, logs, cron jobs, and skills.
-3. **ttyd** (x2) -- web terminals backed by persistent tmux sessions (`hermes` + `terminal`)
-4. **nginx** -- HTTP, HTTPS, and Home Assistant ingress proxy routing to dashboard + terminal + API
+3. **Hermes WebUI** (`nesquena/hermes-webui`) -- browser chat UI with sessions, workspace browser, and Control Center, mounted at `/webui/`.
+4. **ttyd** (x2) -- web terminals backed by persistent tmux sessions (`hermes` + `terminal`)
+5. **nginx** -- HTTP, HTTPS, and Home Assistant ingress proxy routing to dashboard + WebUI + terminal + API
 
 ### Shell Environment
 
@@ -182,6 +187,8 @@ The Hermes tab uses a dedicated `start-hermes` wrapper (sources .bashrc, starts 
 ├── .hermes/               # HERMES_HOME (matches official installer layout)
 │   ├── hermes-agent/      # Git clone (source code, agent-modifiable)
 │   │   └── venv/          # Python venv (editable install)
+│   ├── hermes-webui/      # Hermes WebUI git clone
+│   ├── webui/             # Hermes WebUI state
 │   ├── logs/              # Gateway logs
 │   ├── memories/          # Long-term memory (MEMORY.md, USER.md)
 │   ├── sessions/          # Conversation state

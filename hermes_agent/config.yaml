@@ -1,5 +1,5 @@
 name: Hermes Agent
-version: "1.0.5"
+version: "1.0.6"
 slug: hermes_agent
 description: "The self-improving AI agent built by Nous Research. Home Assistant add-on by Wolfram Ravenwolf."
 url: "https://github.com/WolframRavenwolf/hermes-ha-addon"
@@ -21,17 +21,20 @@ ports:
   8080/tcp: null
   8443/tcp: 8443
 ports_description:
-  8080/tcp: "HTTP: /hermes/ (agent) · /dashboard/ (web UI) · /terminal/ (shell) · /v1/ (OpenAI API)"
-  8443/tcp: "HTTPS: /hermes/ (agent) · /dashboard/ (web UI) · /terminal/ (shell) · /v1/ (OpenAI API) — TLS (self-signed cert)"
+  8080/tcp: "HTTP: /hermes/ (agent) · /dashboard/ (dashboard) · /webui/ (Hermes WebUI) · /terminal/ (shell) · /v1/ (OpenAI API)"
+  8443/tcp: "HTTPS: /hermes/ (agent) · /dashboard/ (dashboard) · /webui/ (Hermes WebUI) · /terminal/ (shell) · /v1/ (OpenAI API) — TLS (self-signed cert)"
 options:
   git_url: "https://github.com/NousResearch/hermes-agent.git"
-  git_ref: "69d025e4a744c8e5968e9aab0c1a8679299840a5"
+  git_ref: "04918345ea31b1106d2ee6d4f42822f4f57616ee"
   git_token: ""
   auto_update: false
   hass_url: "http://homeassistant.local:8123"
   homeassistant_token: ""
   hermes_home: ".hermes"
   enable_dashboard: false
+  enable_webui: true
+  webui_git_url: "https://github.com/nesquena/hermes-webui.git"
+  webui_git_ref: "a8de4e7c0a29750fc9a2e83e2ad8eed324b0467e"
   enable_terminal: false
   enable_api: false
   access_password: ""
@@ -47,6 +50,9 @@ schema:
   homeassistant_token: "password?"
   hermes_home: "str?"
   enable_dashboard: "bool"
+  enable_webui: "bool"
+  webui_git_url: "url?"
+  webui_git_ref: "str?"
   enable_terminal: "bool"
   enable_api: "bool"
   access_password: "password?"

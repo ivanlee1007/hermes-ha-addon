@@ -103,6 +103,20 @@
         }
         # DASHBOARD_END
 
+        # WEBUI_START
+        location = /webui { return 302 /webui/; }
+        location /webui/ {
+            proxy_pass http://hermes_webui/;
+            proxy_http_version 1.1;
+            proxy_set_header Host 127.0.0.1;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_buffering off;
+            proxy_read_timeout 3600s;
+            proxy_send_timeout 3600s;
+        }
+        # WEBUI_END
+
         location = /cert/ca.crt {
             %%AUTH_BASIC_OFF%%
             alias %%CERTS_DIR%%/ca.crt;
@@ -233,6 +247,21 @@
             proxy_send_timeout 300s;
         }
         # DASHBOARD_END
+
+        # WEBUI_START
+        location = /webui { return 302 /webui/; }
+        location /webui/ {
+            proxy_pass http://hermes_webui/;
+            proxy_http_version 1.1;
+            proxy_set_header Host 127.0.0.1;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-Proto https;
+            proxy_buffering off;
+            proxy_read_timeout 3600s;
+            proxy_send_timeout 3600s;
+        }
+        # WEBUI_END
 
         location = /cert/ca.crt {
             %%AUTH_BASIC_OFF%%
