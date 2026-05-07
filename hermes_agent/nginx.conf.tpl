@@ -124,6 +124,10 @@ http {
             proxy_set_header Host 127.0.0.1;
             proxy_set_header X-Forwarded-Host $host;
             proxy_set_header X-Real-IP $remote_addr;
+            # Hermes WebUI sends X-Frame-Options: DENY by default. The add-on
+            # landing page embeds /webui/ in a same-origin iframe, so strip that
+            # upstream frame-blocking header only for the /webui/ proxy route.
+            proxy_hide_header X-Frame-Options;
             proxy_buffering off;
             proxy_read_timeout 3600s;
             proxy_send_timeout 3600s;
