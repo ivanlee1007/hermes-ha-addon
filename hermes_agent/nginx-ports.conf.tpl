@@ -64,7 +64,7 @@
             # Dashboard binds to 127.0.0.1 and validates Host for DNS-rebinding protection.
             # Preserve the external host separately, but send the upstream host it expects.
             proxy_set_header Host 127.0.0.1;
-            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Host $http_host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header Authorization "Bearer %%DASHBOARD_TOKEN%%";
             proxy_buffering off;
@@ -83,7 +83,7 @@
             # Dashboard binds to 127.0.0.1 and validates Host for DNS-rebinding protection.
             # Preserve the external host separately, but send the upstream host it expects.
             proxy_set_header Host 127.0.0.1;
-            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Host $http_host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_buffering off;
             proxy_read_timeout 300s;
@@ -95,7 +95,7 @@
             # Dashboard binds to 127.0.0.1 and validates Host for DNS-rebinding protection.
             # Preserve the external host separately, but send the upstream host it expects.
             proxy_set_header Host 127.0.0.1;
-            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Host $http_host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_buffering off;
             proxy_read_timeout 300s;
@@ -109,8 +109,13 @@
             proxy_pass http://hermes_webui/;
             proxy_http_version 1.1;
             proxy_set_header Host 127.0.0.1;
-            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Host $http_host;
             proxy_set_header X-Real-IP $remote_addr;
+            # Browser Origin/Referer can reflect the Home Assistant public URL while
+            # this add-on proxy talks to WebUI on 127.0.0.1, which trips WebUI's
+            # same-origin CSRF guard. Strip them only on the trusted /webui/ proxy.
+            proxy_set_header Origin "";
+            proxy_set_header Referer "";
             # Hermes WebUI sends X-Frame-Options: DENY by default. The add-on
             # landing page embeds /webui/ in a same-origin iframe, so strip that
             # upstream frame-blocking header only for the /webui/ proxy route.
@@ -210,7 +215,7 @@
             # Dashboard binds to 127.0.0.1 and validates Host for DNS-rebinding protection.
             # Preserve the external host separately, but send the upstream host it expects.
             proxy_set_header Host 127.0.0.1;
-            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Host $http_host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-Proto https;
             proxy_set_header Authorization "Bearer %%DASHBOARD_TOKEN%%";
@@ -230,7 +235,7 @@
             # Dashboard binds to 127.0.0.1 and validates Host for DNS-rebinding protection.
             # Preserve the external host separately, but send the upstream host it expects.
             proxy_set_header Host 127.0.0.1;
-            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Host $http_host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-Proto https;
             proxy_buffering off;
@@ -243,7 +248,7 @@
             # Dashboard binds to 127.0.0.1 and validates Host for DNS-rebinding protection.
             # Preserve the external host separately, but send the upstream host it expects.
             proxy_set_header Host 127.0.0.1;
-            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Host $http_host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-Proto https;
             proxy_buffering off;
@@ -258,8 +263,13 @@
             proxy_pass http://hermes_webui/;
             proxy_http_version 1.1;
             proxy_set_header Host 127.0.0.1;
-            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Host $http_host;
             proxy_set_header X-Real-IP $remote_addr;
+            # Browser Origin/Referer can reflect the Home Assistant public URL while
+            # this add-on proxy talks to WebUI on 127.0.0.1, which trips WebUI's
+            # same-origin CSRF guard. Strip them only on the trusted /webui/ proxy.
+            proxy_set_header Origin "";
+            proxy_set_header Referer "";
             # Hermes WebUI sends X-Frame-Options: DENY by default. The add-on
             # landing page embeds /webui/ in a same-origin iframe, so strip that
             # upstream frame-blocking header only for the /webui/ proxy route.
