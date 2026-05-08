@@ -206,6 +206,15 @@ compute_marker() {
     echo "${GIT_URL}|${ref}|${hash}|${subs}"
 }
 
+homeassistant_tool_available() {
+    if [ ! -x "$VENV_DIR/bin/python" ]; then return 1; fi
+    (cd "$SRC_DIR" && "$VENV_DIR/bin/python" - <<'PY'
+import aiohttp  # Hermes [homeassistant] extra
+import tools.homeassistant_tool  # registers ha_* tools with Hermes registry
+PY
+    ) >/dev/null 2>&1
+}
+
 install_needed() {
     local current
     current=$(compute_marker)
@@ -213,6 +222,7 @@ install_needed() {
     if [ "$(cat "$MARKER_FILE")" != "$current" ]; then return 0; fi
     if [ ! -f "$VENV_DIR/bin/activate" ]; then return 0; fi
     if [ ! -f "$VENV_DIR/bin/hermes" ]; then return 0; fi
+    if ! homeassistant_tool_available; then return 0; fi
     return 1
 }
 
@@ -295,9 +305,11 @@ fi
 # Editable install
 activate_venv
 if install_needed; then
-    echo "[run] Installing Hermes (editable)..."
+    echo "[run] Installing Hermes (editable, with Home Assistant tools)..."
     cd "$SRC_DIR"
-    uv pip install -e ".[all,dev]" 2>&1 | tail -5
+    # Keep Home Assistant explicit even though upstream [all] currently includes it;
+    # this makes the add-on resilient to upstream extras changes and repairs older venvs.
+    uv pip install -e ".[all,dev,homeassistant]" 2>&1 | tail -5
     # Submodules
     if [ -f "$SRC_DIR/mini-swe-agent/pyproject.toml" ]; then
         uv pip install -e "$SRC_DIR/mini-swe-agent" 2>&1 | tail -3
@@ -305,10 +317,15 @@ if install_needed; then
     if [ -f "$SRC_DIR/tinker-atropos/pyproject.toml" ]; then
         uv pip install -e "$SRC_DIR/tinker-atropos" 2>&1 | tail -3
     fi
+    if homeassistant_tool_available; then
+        echo "[run] Home Assistant tools installed (ha_list_entities, ha_get_state, ha_list_services, ha_call_service)"
+    else
+        echo "[run] Warning: Home Assistant tools are not importable after install"
+    fi
     compute_marker > "$MARKER_FILE"
     echo "[run] Install complete"
 else
-    echo "[run] Install up to date (marker match)"
+    echo "[run] Install up to date (marker match, Home Assistant tools available)"
 fi
 
 # Link image-installed npm packages into project node_modules (where Hermes expects them)
@@ -481,10 +498,13 @@ if [ -f "$HERMES_HOME/.env" ]; then
     done
 fi
 
-# HA integration: pass through if set
+# HA integration: pass through if set. Hermes exposes the built-in
+# Home Assistant toolset only when HASS_TOKEN is present.
 if [ -n "$HASS_TOKEN" ]; then
     export HASS_TOKEN
-    echo "[run] HASS_TOKEN injected"
+    echo "[run] HASS_TOKEN injected; Home Assistant tools enabled"
+else
+    echo "[run] HASS_TOKEN not set; Home Assistant tools installed but disabled"
 fi
 # Git token also serves as GITHUB_TOKEN (for gh CLI + Hermes skills)
 if [ -n "$GIT_TOKEN" ]; then
